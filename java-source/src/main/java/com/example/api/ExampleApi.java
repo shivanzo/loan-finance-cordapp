@@ -1,8 +1,9 @@
 package com.example.api;
 
-import com.example.flow.ExampleFlow;
+import com.example.flow.BankCreditAgencyFlow;
+import com.example.flow.FinanceFlow;
 import com.example.schema.IOUSchemaV1;
-import com.example.state.IOUState;
+import com.example.state.FinanceAndBankState;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import net.corda.core.contracts.StateAndRef;
@@ -39,7 +40,8 @@ public class ExampleApi {
 
     static private final Logger logger = LoggerFactory.getLogger(ExampleApi.class);
 
-    public ExampleApi(CordaRPCOps rpcOps) {
+    public ExampleApi(CordaRPCOps rpcOps)
+    {
         this.rpcOps = rpcOps;
         this.myLegalName = rpcOps.nodeInfo().getLegalIdentities().get(0).getName();
     }
@@ -50,9 +52,123 @@ public class ExampleApi {
     @GET
     @Path("me")
     @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, CordaX500Name> whoami() {
+    public Map<String, CordaX500Name> whoami()
+    {
         return ImmutableMap.of("me", myLegalName);
     }
+
+
+    /* by Shivan Sawant */
+    @GET
+    @Path("trade")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getTrade()
+    {
+        System.out.println("Shivan Sawant : "+rpcOps.vaultQuery(FinanceAndBankState.class).getStates() );
+       return Response.status(200).entity(rpcOps.vaultQuery(FinanceAndBankState.class).getStates()).build();
+    }
+
+
+    /* by Shivan Sawant */
+/*
+
+    @PUT
+    @Path("create-loan")
+    public Response loanRequest(@QueryParam("company") String company, @QueryParam("value")int value ,@QueryParam("partyName") CordaX500Name partyName) throws InterruptedException, ExecutionException {
+       System.out.println("partyName : "+partyName);
+        if (value <= 0)
+        {
+            return Response.status(BAD_REQUEST).entity("Query parameter 'Amount' must be non-negative.\n").build();
+        }
+        if (partyName == null)
+        {
+            return Response.status(BAD_REQUEST).entity("Query parameter 'partyName' missing or has wrong format.\n").build();
+        }
+
+        System.out.println("Type 1 pass");
+
+        final Party otherParty = rpcOps.wellKnownPartyFromX500Name(partyName);
+
+        System.out.println("Type 2 pass");
+
+        if (otherParty == null)
+        {
+            return Response.status(BAD_REQUEST).entity("Party named " + partyName + "cannot be found.\n").build();
+        }
+
+        System.out.println("Type 3 pass");
+
+        try {
+            FinanceFlow.Initiator initiator = new FinanceFlow.Initiator(value,otherParty);
+            final SignedTransaction signedTx = rpcOps
+                    .startTrackedFlowDynamic(initiator.getClass(), value, otherParty)
+                    .getReturnValue()
+                    .get();
+
+            System.out.println("Type 4 pass");
+
+            final String msg = String.format("Transaction id %s committed to ledger.\n", signedTx.getId());
+            return Response.status(CREATED).entity(msg).build();
+
+        } catch (Throwable ex) {
+            final String msg = ex.getMessage();
+            logger.error(ex.getMessage(), ex);
+            return Response.status(BAD_REQUEST).entity(msg).build();
+        }
+    }
+*/
+
+    /* by Shivan Sawant */
+
+    @PUT
+    @Path("send-loanNotification")
+    public Response loanEligibilityCheck(@QueryParam("company") String company, @QueryParam("value")int value ,@QueryParam("partyName") CordaX500Name partyName) throws InterruptedException, ExecutionException {
+        System.out.println("partyName : "+partyName);
+        if (value <= 0)
+        {
+            return Response.status(BAD_REQUEST).entity("Query parameter 'Amount' must be non-negative.\n").build();
+        }
+        if (partyName == null)
+        {
+            return Response.status(BAD_REQUEST).entity("Query parameter 'partyName' missing or has wrong format.\n").build();
+        }
+
+        System.out.println("Type 1 pass");
+
+        final Party otherParty = rpcOps.wellKnownPartyFromX500Name(partyName);
+
+        System.out.println("Type 2 pass");
+
+        if (otherParty == null)
+        {
+            return Response.status(BAD_REQUEST).entity("Party named " + partyName + "cannot be found.\n").build();
+        }
+
+        System.out.println("Type 3 pass");
+
+        try {
+            //FinanceFlow.Initiator initiator = new FinanceFlow.Initiator(value,otherParty);
+            BankCreditAgencyFlow.Initiator initiator = new BankCreditAgencyFlow.Initiator()
+            final SignedTransaction signedTx = rpcOps
+                    .startTrackedFlowDynamic(initiator.getClass(), value, otherParty)
+                    .getReturnValue()
+                    .get();
+
+            System.out.println("Type 4 pass");
+
+            final String msg = String.format("Transaction id %s committed to ledger.\n", signedTx.getId());
+            return Response.status(CREATED).entity(msg).build();
+
+        } catch (Throwable ex) {
+            final String msg = ex.getMessage();
+            logger.error(ex.getMessage(), ex);
+            return Response.status(BAD_REQUEST).entity(msg).build();
+        }
+    }
+
+
+
+
 
     /**
      * Returns all parties registered with the [NetworkMapService]. These names can be used to look up identities
@@ -61,11 +177,10 @@ public class ExampleApi {
     @GET
     @Path("peers")
     @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, List<CordaX500Name>> getPeers() {
+    public Map<String, List<CordaX500Name>> getPeers()
+    {
         List<NodeInfo> nodeInfoSnapshot = rpcOps.networkMapSnapshot();
-        return ImmutableMap.of("peers", nodeInfoSnapshot
-                .stream()
-                .map(node -> node.getLegalIdentities().get(0).getName())
+        return ImmutableMap.of("peers", nodeInfoSnapshot.stream().map(node -> node.getLegalIdentities().get(0).getName())
                 .filter(name -> !name.equals(myLegalName) && !serviceNames.contains(name.getOrganisation()))
                 .collect(toList()));
     }
@@ -76,8 +191,8 @@ public class ExampleApi {
     @GET
     @Path("ious")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<StateAndRef<IOUState>> getIOUs() {
-        return rpcOps.vaultQuery(IOUState.class).getStates();
+    public List<StateAndRef<FinanceAndBankState>> getIOUs() {
+        return rpcOps.vaultQuery(FinanceAndBankState.class).getStates();
     }
 
     /**
@@ -108,7 +223,7 @@ public class ExampleApi {
 
         try {
             final SignedTransaction signedTx = rpcOps
-                    .startTrackedFlowDynamic(ExampleFlow.Initiator.class, iouValue, otherParty)
+                    .startTrackedFlowDynamic(FinanceFlow.Initiator.class, iouValue, otherParty)
                     .getReturnValue()
                     .get();
 
@@ -134,7 +249,7 @@ public class ExampleApi {
         CriteriaExpression lenderIndex = Builder.equal(lender, myLegalName.toString());
         QueryCriteria lenderCriteria = new QueryCriteria.VaultCustomQueryCriteria(lenderIndex);
         QueryCriteria criteria = generalCriteria.and(lenderCriteria);
-        List<StateAndRef<IOUState>> results = rpcOps.vaultQueryByCriteria(criteria,IOUState.class).getStates();
+        List<StateAndRef<FinanceAndBankState>> results = rpcOps.vaultQueryByCriteria(criteria,FinanceAndBankState.class).getStates();
         return Response.status(OK).entity(results).build();
     }
 }
