@@ -1,6 +1,7 @@
 package com.example.api;
 
 import com.example.flow.BankCreditAgencyFlow;
+import com.example.flow.CreditAgencyBankNotificationFlow;
 import com.example.flow.FinanceFlow;
 import com.example.schema.IOUSchemaV1;
 import com.example.state.FinanceAndBankState;
@@ -70,7 +71,6 @@ public class ExampleApi {
 
 
     /* by Shivan Sawant */
-/*
 
     @PUT
     @Path("create-loan")
@@ -116,12 +116,11 @@ public class ExampleApi {
             return Response.status(BAD_REQUEST).entity(msg).build();
         }
     }
-*/
 
     /* by Shivan Sawant */
 
     @PUT
-    @Path("send-loanNotification")
+    @Path("send-loanEligibilityCheck")
     public Response loanEligibilityCheck(@QueryParam("company") String company, @QueryParam("value")int value ,@QueryParam("partyName") CordaX500Name partyName) throws InterruptedException, ExecutionException {
         System.out.println("partyName : "+partyName);
         if (value <= 0)
@@ -148,9 +147,11 @@ public class ExampleApi {
 
         try {
             //FinanceFlow.Initiator initiator = new FinanceFlow.Initiator(value,otherParty);
-            BankCreditAgencyFlow.Initiator initiator = new BankCreditAgencyFlow.Initiator()
+            BankCreditAgencyFlow.Initiator initiator = new BankCreditAgencyFlow.Initiator(value,otherParty);
+            BankCreditAgencyFlow initiator1 = new BankCreditAgencyFlow();
+            System.out.println("Before Type 4 Passes");
             final SignedTransaction signedTx = rpcOps
-                    .startTrackedFlowDynamic(initiator.getClass(), value, otherParty)
+                    .startTrackedFlowDynamic(BankCreditAgencyFlow.Initiator.class, value, otherParty)
                     .getReturnValue()
                     .get();
 
@@ -165,6 +166,58 @@ public class ExampleApi {
             return Response.status(BAD_REQUEST).entity(msg).build();
         }
     }
+
+
+    /** code for creditAgency and Bank
+     *
+     */
+
+    @PUT
+    @Path("credit-response")
+    public Response creditAgencyResponse(@QueryParam("company") String company, @QueryParam("value")int value ,@QueryParam("partyName") CordaX500Name partyName) throws InterruptedException, ExecutionException {
+        System.out.println("partyName : "+partyName);
+        if (value <= 0)
+        {
+            return Response.status(BAD_REQUEST).entity("Query parameter 'Amount' must be non-negative.\n").build();
+        }
+        if (partyName == null)
+        {
+            return Response.status(BAD_REQUEST).entity("Query parameter 'partyName' missing or has wrong format.\n").build();
+        }
+
+        System.out.println("Type 1 pass");
+
+        final Party otherParty = rpcOps.wellKnownPartyFromX500Name(partyName);
+
+        System.out.println("Type 2 pass");
+
+        if (otherParty == null)
+        {
+            return Response.status(BAD_REQUEST).entity("Party named " + partyName + "cannot be found.\n").build();
+        }
+
+        System.out.println("Type 3 pass");
+
+        try {
+            CreditAgencyBankNotificationFlow.Initiator initiator = new CreditAgencyBankNotificationFlow.Initiator(value,otherParty);
+            final SignedTransaction signedTx = rpcOps
+                    .startTrackedFlowDynamic(initiator.getClass(), value, otherParty)
+                    .getReturnValue()
+                    .get();
+
+            System.out.println("Type 4 pass");
+            final String msg = String.format("Transaction id %s committed to ledger.\n", signedTx.getId());
+            return Response.status(CREATED).entity(msg).build();
+
+        } catch (Throwable ex) {
+            final String msg = ex.getMessage();
+            logger.error(ex.getMessage(), ex);
+            return Response.status(BAD_REQUEST).entity(msg).build();
+        }
+    }
+
+
+
 
 
 

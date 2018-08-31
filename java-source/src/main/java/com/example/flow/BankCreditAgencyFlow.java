@@ -12,10 +12,12 @@ import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.flows.*;
 import net.corda.core.identity.Party;
+import net.corda.core.serialization.ConstructorForDeserialization;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
 import net.corda.core.utilities.ProgressTracker;
 
+import java.security.PublicKey;
 import java.util.List;
 
 import static net.corda.core.contracts.ContractsDSL.requireThat;
@@ -27,17 +29,23 @@ public class BankCreditAgencyFlow
     public static class Initiator extends FlowLogic<SignedTransaction>
     {
         private final Party otherParty;
-        private final String companyName;
+        private String companyName;
         private final int amount;
-        private boolean loanEligibleFlag1;
-        private final UniqueIdentifier linearId;
+        private boolean loanEligibleFlag;
+        private UniqueIdentifier linearId;
 
-        public Initiator(Party otherParty, String companyName, int amount, boolean loanEligibleFlag1, UniqueIdentifier linearId)
+        public Initiator(int amount,Party otherParty)
+        {
+            System.out.println("Entered this constructor");
+            this.amount = amount;
+            this.otherParty = otherParty;
+        }
+        public Initiator(Party otherParty, String companyName, int amount, boolean loanEligibleFlag, UniqueIdentifier linearId)
         {
             this.otherParty = otherParty;
             this.companyName = companyName;
             this.amount = amount;
-            this.loanEligibleFlag1 = false;
+            this.loanEligibleFlag = false;
             this.linearId = linearId;
         }
         private final ProgressTracker.Step VERIFYING_TRANSACTION = new ProgressTracker.Step("Verifying contract constraints.");
@@ -72,31 +80,34 @@ public class BankCreditAgencyFlow
         @Override
         public SignedTransaction call() throws FlowException
         {
-           try {
+          // try
+          // {
+              // List<StateAndRef<BankAndCreditState>> inputStateList = getServiceHub().getVaultService().queryBy(BankAndCreditState.class).getStates();
+              // System.out.println("Size of the inputStateList : "+ inputStateList.size());
+              // if(inputStateList !=null && !(inputStateList.isEmpty()))
+               //{
+                //   inputStateList.get(0);
+              // }
+              // else
+              // {
+                  // throw new IllegalArgumentException("State Cannot be found");
+              // }
 
-               List<StateAndRef<FinanceAndBankState>> inputStateList = getServiceHub().getVaultService().queryBy(FinanceAndBankState.class).getStates();
-               if(inputStateList !=null && !(inputStateList.isEmpty()))
-               {
-                   inputStateList.get(0);
-               }
-               else
-               {
-                   throw new IllegalArgumentException("State Cannot be found");
-               }
-
-           }
-           catch(Exception e)
-           {
-               e.printStackTrace();
-               System.out.println("Exception occured : "+e);
-           }
-
-
+          // }
+          // catch(Exception e)
+          // {
+              // e.printStackTrace();
+             //  System.out.println("Exception occured : "+e);
+           //}
+            System.out.println("I reached here");
             final Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
             progressTracker.setCurrentStep(LOAN_ELIGIBILITY);
             Party me = getServiceHub().getMyInfo().getLegalIdentities().get(0);
-            BankAndCreditState bankAndCreditState = new BankAndCreditState(me,otherParty,false, loanEligibleFlag1, companyName,amount,new UniqueIdentifier());
-            final Command<FinanceContract.Commands.SendForApproval> sendLoanApprovalCommand = new Command<FinanceContract.Commands.SendForApproval>(new FinanceContract.Commands.SendForApproval(),ImmutableList.of(bankAndCreditState.getStateBank().getOwningKey(),bankAndCreditState.getCreditRatingAgency().getOwningKey()));
+            BankAndCreditState bankAndCreditState = new BankAndCreditState(me,otherParty, loanEligibleFlag, companyName,amount,new UniqueIdentifier());
+            PublicKey bankKey = getServiceHub().getMyInfo().getLegalIdentities().get(0).getOwningKey();
+            PublicKey creditAgencyKey = otherParty.getOwningKey();
+
+            final Command<FinanceContract.Commands.SendForApproval> sendLoanApprovalCommand = new Command<FinanceContract.Commands.SendForApproval>(new FinanceContract.Commands.SendForApproval(),ImmutableList.of(bankKey,creditAgencyKey));
             final TransactionBuilder txBuilder = new TransactionBuilder(notary)
                     .addOutputState(bankAndCreditState,FinanceContract.TEMPLATE_CONTRACT_ID)
                     .addCommand(sendLoanApprovalCommand);
@@ -147,7 +158,7 @@ public class BankCreditAgencyFlow
                 {
                     requireThat(require -> {
                         ContractState output = stx.getTx().getOutputs().get(0).getData();
-                        require.using("This must be an FinanceAndBankState transaction.", output instanceof FinanceAndBankState);
+                        require.using("This must be an FinanceAndBankState transaction.", output instanceof BankAndCreditState);
                         BankAndCreditState iou = (BankAndCreditState) output;
 
                         return null;

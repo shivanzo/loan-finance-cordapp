@@ -72,31 +72,39 @@ public class FinanceContract implements Contract
         }
         else if(commandType instanceof Commands.SendForApproval)
         {
-           if(tx.getInputStates().size() !=1)
-               throw new IllegalArgumentException("Must have atleast one input state");
+           try {
+               if(tx.getInputStates().size() !=0)
+                   throw new IllegalArgumentException("Must have atleast Zero input state");
 
-           if(tx.getOutputStates().size() !=1)
-               throw new IllegalArgumentException("Must have one output state");
+               if(tx.getOutputStates().size() !=1)
+                   throw new IllegalArgumentException("Must have one output state");
 
-           ContractState input = tx.getInput(0);
-           ContractState output = tx.getOutput(0);
+               ContractState input = tx.getInput(0);
+               ContractState output = tx.getOutput(0);
 
-           if(!(input instanceof FinanceAndBankState))
-               throw new IllegalArgumentException("Input must be of FinanceAndBank State");
+               if(!(input instanceof BankAndCreditState))
+                   throw new IllegalArgumentException("Input must be of FinanceAndBank State");
 
-           if(!(output instanceof BankAndCreditState))
-               throw new IllegalArgumentException("Output must of BankAndCredit State");
+               if(!(output instanceof BankAndCreditState))
+                   throw new IllegalArgumentException("Output must of BankAndCredit State");
 
-           FinanceAndBankState inputState = (FinanceAndBankState)input;
-           BankAndCreditState outputState = (BankAndCreditState)output;
+               BankAndCreditState inputState = (BankAndCreditState)input;
+               BankAndCreditState outputState = (BankAndCreditState)output;
 
-           Party inputBank = inputState.getBank();
-           Party outputCreditAgency = outputState.getCreditRatingAgency();
+               Party inputBank = inputState.getbank();
+               Party outputCreditAgency = outputState.getCreditRatingAgency();
 
-           if(requiredSigners.contains(inputBank.getOwningKey()))
-               throw new IllegalArgumentException("Bank must sign before sending");
-           if(requiredSigners.contains(outputCreditAgency.getOwningKey()))
-               throw new IllegalArgumentException("CreditRating agency must sign");
+               if(requiredSigners.contains(inputBank.getOwningKey()))
+                   throw new IllegalArgumentException("Bank must sign before sending");
+               if(requiredSigners.contains(outputCreditAgency.getOwningKey()))
+                   throw new IllegalArgumentException("CreditRating agency must sign");
+               }
+               catch (Exception e)
+               {
+                   e.printStackTrace();
+                   System.out.println("Exception : "+e);
+               }
+
         }
         else if (commandType instanceof Commands.receiveCreditApproval)
         {
@@ -119,7 +127,7 @@ public class FinanceContract implements Contract
             BankAndCreditState outputState = (BankAndCreditState) output;
 
             PublicKey creditAgencyKey = inputState.getCreditRatingAgency().getOwningKey();
-            PublicKey bankKey = inputState.getStateBank().getOwningKey();
+            PublicKey bankKey = inputState.getbank().getOwningKey();
 
             if(inputState.getCompanyName().equalsIgnoreCase("Persistent Systems") || inputState.getCompanyName().equalsIgnoreCase("Infosys"))
             {
