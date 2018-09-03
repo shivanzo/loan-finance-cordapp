@@ -23,12 +23,12 @@ import java.util.List;
 
 import static net.corda.core.contracts.ContractsDSL.requireThat;
 
-public class CreditAgencyBankNotificationFlow
-{
+public class CreditAgencyBankNotificationFlow {
+
     @InitiatingFlow
     @StartableByRPC
-    public static class Initiator extends FlowLogic<SignedTransaction>
-    {
+    public static class Initiator extends FlowLogic<SignedTransaction> {
+
         private final Party otherParty;
         private  String companyName;
         private boolean loanEligibleFlag;
@@ -36,22 +36,21 @@ public class CreditAgencyBankNotificationFlow
         UniqueIdentifier linearId = null;
         String id = null;
 
-        public Initiator(int amount, Party otherParty)
-        {
+        public Initiator(int amount, Party otherParty,String companyName) {
             this.amount = amount;
             this.otherParty = otherParty;
+            this.companyName = companyName;
         }
 
-        public Initiator(Party otherParty, String companyName, boolean loanEligibleFlag, int amount)
-        {
+        public Initiator(Party otherParty, String companyName, boolean loanEligibleFlag, int amount,UniqueIdentifier linearId) {
             this.otherParty = otherParty;
             this.companyName = companyName;
             this.loanEligibleFlag = loanEligibleFlag;
             this.amount = amount;
+            this.linearId = linearId;
         }
 
-        public boolean isLoanEligibleFlag()
-        {
+        public boolean isLoanEligibleFlag() {
             return loanEligibleFlag;
         }
 
@@ -65,8 +64,7 @@ public class CreditAgencyBankNotificationFlow
                 return CollectSignaturesFlow.Companion.tracker();
             }
         };
-        private final ProgressTracker.Step FINALISING_TRANSACTION = new ProgressTracker.Step("Obtaining notary signature and recording transaction.")
-        {
+        private final ProgressTracker.Step FINALISING_TRANSACTION = new ProgressTracker.Step("Obtaining notary signature and recording transaction.") {
             public ProgressTracker childProgressTracker()
             {
                 return FinalityFlow.Companion.tracker();
@@ -81,61 +79,46 @@ public class CreditAgencyBankNotificationFlow
                 FINALISING_TRANSACTION
         );
 
+        public UniqueIdentifier getLinearId() {
+            return linearId;
+        }
+
+        public void setLinearId(UniqueIdentifier linearId) {
+            this.linearId = linearId;
+        }
+
         @Suspendable
         @Override
         public SignedTransaction call() throws FlowException
         {
-            QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.ALL);
-            QueryCriteria.LinearStateQueryCriteria linearStateCriteria = new QueryCriteria.LinearStateQueryCriteria();
+            QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
+            //QueryCriteria.LinearStateQueryCriteria linearStateCriteria = new QueryCriteria.LinearStateQueryCriteria();
             Vault.Page<BankAndCreditState> results  = getServiceHub().getVaultService().queryBy(BankAndCreditState.class,criteria);
             List<StateAndRef<BankAndCreditState>> inputStateList = results.getStates();
-            if(inputStateList != null && !(inputStateList.isEmpty()) )
-            {
-                inputStateList.get(0);
+            if(inputStateList != null && !(inputStateList.isEmpty()) ) {
+                inputStateList.get(inputStateList.size()-1);
+                System.out.println("List of States : "+inputStateList.get(0));
             }
-            else
-            {
+            else {
                 throw new IllegalArgumentException("State Cannot be found");
             }
-            /*List<StateAndRef<BankAndCreditState>> inputStateList = null;
-            try
-            {
-                inputStateList = getServiceHub().getVaultService().queryBy(BankAndCreditState.class).getStates();
-
-                System.out.println("inputStateList : "+inputStateList.size());
-                if(inputStateList !=null && !(inputStateList.isEmpty()))
-                {
-                    inputStateList.get(0);
-                }
-                else
-                {
-                    throw new IllegalArgumentException("State Cannot be found");
-                }
-            }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-                System.out.println("Exception : "+e);
-            }*/
 
             List<String> blacklisted = Arrays.asList("Syntel","Mindtree","IBM","TechMahindra","TCS","J.P. Morgon","Bank of America");
             boolean contains = blacklisted.contains(companyName);
 
             BankAndCreditState bankAndCreditState = new BankAndCreditState(linearId);
-            if(contains)
-            {
+            if(contains) {
                 bankAndCreditState.setLoanEligibleFlag(false);
                 throw new IllegalArgumentException("This company is blacklisted for LOAN, Loan is rejected ..!!!");
             }
-            else
-            {
+            else {
                 bankAndCreditState.setLoanEligibleFlag(true);
             }
 
             final Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
             progressTracker.setCurrentStep(LOAN_ELIGIBILITY_RESPONSE);
             Party me = getServiceHub().getMyInfo().getLegalIdentities().get(0);
-            final StateAndRef<BankAndCreditState> stateAsInput =  inputStateList.get(0);
+            final StateAndRef<BankAndCreditState> stateAsInput =  inputStateList.get(inputStateList.size()-1);
             linearId = stateAsInput.getState().getData().getLinearId().copy(id,stateAsInput.getState().getData().getLinearId().getId());
             BankAndCreditState bankAndCreditStates = new BankAndCreditState(me,otherParty,true, companyName,amount,linearId);
             final Command<FinanceContract.Commands.receiveCreditApproval> receiveCreditApproval = new Command<FinanceContract.Commands.receiveCreditApproval>(new FinanceContract.Commands.receiveCreditApproval(),ImmutableList.of(bankAndCreditStates.getCreditRatingAgency().getOwningKey(),bankAndCreditStates.getbank().getOwningKey()));
@@ -160,8 +143,6 @@ public class CreditAgencyBankNotificationFlow
             //Notarise and record the transaction in both party vaults.
             return subFlow(new FinalityFlow(fullySignedTx));
         }
-
-
     }
 
     @InitiatedBy(Initiator.class)
@@ -175,12 +156,11 @@ public class CreditAgencyBankNotificationFlow
 
         @Suspendable
         @Override
-        public SignedTransaction call() throws FlowException
-        {
-            class SignTxFlow extends  SignTransactionFlow
-            {
-                public SignTxFlow(FlowSession otherSideSession, ProgressTracker progressTracker)
-                {
+        public SignedTransaction call() throws FlowException {
+
+            class SignTxFlow extends  SignTransactionFlow {
+
+                public SignTxFlow(FlowSession otherSideSession, ProgressTracker progressTracker) {
                     super(otherSideSession, progressTracker);
                 }
 
@@ -189,7 +169,7 @@ public class CreditAgencyBankNotificationFlow
                 {
                     requireThat(require -> {
                         ContractState output = stx.getTx().getOutputs().get(0).getData();
-                        require.using("This must be an FinanceAndBankState transaction.", output instanceof FinanceAndBankState);
+                        require.using("This must be an FinanceAndBankState transaction.", output instanceof BankAndCreditState);
                         BankAndCreditState iou = (BankAndCreditState) output;
                         return null;
                     });

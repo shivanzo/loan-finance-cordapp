@@ -5,11 +5,14 @@ import net.corda.core.contracts.LinearState;
 import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.identity.AbstractParty;
 import net.corda.core.identity.Party;
+import net.corda.core.serialization.ConstructorForDeserialization;
+import net.corda.core.serialization.CordaSerializable;
 
 import java.util.List;
 
-public class FinanceAndBankState implements LinearState
-{
+@CordaSerializable
+public class FinanceAndBankState implements LinearState {
+
     private Party finance;
     private Party bank;
     private String companyName;
@@ -18,8 +21,12 @@ public class FinanceAndBankState implements LinearState
     private final UniqueIdentifier linearId;
 
 
-    public FinanceAndBankState(Party finance, Party bank, String companyName, int amount, UniqueIdentifier linearId)
-    {
+    public FinanceAndBankState(UniqueIdentifier linearId) {
+        this.linearId = linearId;
+    }
+
+    @ConstructorForDeserialization
+    public FinanceAndBankState(Party finance, Party bank, String companyName, int amount, UniqueIdentifier linearId) {
         this.finance = finance;
         this.bank = bank;
         this.companyName = companyName;
@@ -32,10 +39,6 @@ public class FinanceAndBankState implements LinearState
         return finance;
     }
 
-    public void setFinance(Party finance)
-    {
-        this.finance = finance;
-    }
     public Party getBank()
     {
         return bank;
@@ -52,16 +55,8 @@ public class FinanceAndBankState implements LinearState
     }
 
 
-    public void setBank(Party bank) {
-        this.bank = bank;
-    }
-
     public void setCompanyName(String companyName) {
         this.companyName = companyName;
-    }
-
-    public void setAmount(int amount) {
-        this.amount = amount;
     }
 
     public boolean isLoanEligibleFlag() {
@@ -81,7 +76,7 @@ public class FinanceAndBankState implements LinearState
     @Override
     public List<AbstractParty> getParticipants()
     {
-        return ImmutableList.of(bank,finance);
+        return ImmutableList.of(finance,bank);
     }
 
 }

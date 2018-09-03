@@ -13,29 +13,24 @@ import java.security.PublicKey;
 import java.util.Arrays;
 import java.util.List;
 
+public class FinanceContract implements Contract {
 
-public class FinanceContract implements Contract
-{
     public static final String TEMPLATE_CONTRACT_ID = "com.example.contract.FinanceContract";
 
     @Override
-    public void verify(LedgerTransaction tx) throws IllegalArgumentException
-    {
+    public void verify(LedgerTransaction tx) throws IllegalArgumentException {
+
         if(tx != null && tx.getCommands().size() != 1)
             throw new IllegalArgumentException("Transaction must have one command");
-
-        System.out.println("Hello world");
 
         Command command = tx.getCommand(0);
         List<PublicKey> requiredSigners = command.getSigners();
         CommandData commandType = command.getValue();
 
         if(commandType instanceof Commands.InitiateLoan) {
-
-           try {
+            try {
                if (tx.getInputStates().size() != 0)
                    throw new IllegalArgumentException("InitiateLoan should not have inputs");
-
                if (tx.getOutputStates().size() != 1)
                    throw new IllegalArgumentException("InitiateLoan should have one output");
 
@@ -44,11 +39,6 @@ public class FinanceContract implements Contract
                    throw new IllegalArgumentException("Ouput must be a FinanceAndBankState");
 
                FinanceAndBankState financAndBankState = (FinanceAndBankState) outputState;
-
-               System.out.println("**************************************************************************************************");
-               System.out.println("Amount : " + financAndBankState.getAmount());
-               System.out.println("**************************************************************************************************");
-
                if (financAndBankState.getAmount() > 1000 && financAndBankState.getAmount() < 100000000)
                    throw new IllegalArgumentException("Loan amount is out of the range");
 
@@ -60,19 +50,14 @@ public class FinanceContract implements Contract
 
                if (!(requiredSigners.contains(financeAgencyKey)))
                    throw new IllegalArgumentException("Finance agency should sign the transaction");
-
-               System.out.println("#####################################################");
-               System.out.println("At the end");
-           }
-           catch (Exception e)
-           {
+               }
+           catch (Exception e) {
                e.printStackTrace();
                System.out.println("Exception "+e);
            }
 
         }
-        else if(commandType instanceof Commands.SendForApproval)
-        {
+        else if(commandType instanceof Commands.SendForApproval) {
            try {
                if(tx.getInputStates().size() !=0)
                    throw new IllegalArgumentException("Must have atleast Zero input state");
@@ -91,7 +76,6 @@ public class FinanceContract implements Contract
 
                BankAndCreditState inputState = (BankAndCreditState)input;
                BankAndCreditState outputState = (BankAndCreditState)output;
-
                Party inputBank = inputState.getbank();
                Party outputCreditAgency = outputState.getCreditRatingAgency();
 
@@ -100,12 +84,10 @@ public class FinanceContract implements Contract
                if(requiredSigners.contains(outputCreditAgency.getOwningKey()))
                    throw new IllegalArgumentException("CreditRating agency must sign");
                }
-               catch (Exception e)
-               {
+               catch (Exception e) {
                    e.printStackTrace();
                    System.out.println("Exception : "+e);
                }
-
         }
         else if (commandType instanceof Commands.receiveCreditApproval)
         {
@@ -128,22 +110,14 @@ public class FinanceContract implements Contract
             BankAndCreditState outputState = (BankAndCreditState) output;
 
             PublicKey creditAgencyKey = inputState.getCreditRatingAgency().getOwningKey();
-            PublicKey bankKey = inputState.getbank().getOwningKey();
-
-            if(inputState.getCompanyName().equalsIgnoreCase("Persistent Systems") || inputState.getCompanyName().equalsIgnoreCase("Infosys"))
-            {
-
-            }
+            PublicKey bankKey = outputState.getbank().getOwningKey();
 
             if(!(requiredSigners.contains(creditAgencyKey)))
                 throw new IllegalArgumentException("CreditAgency signature is required");
             if(!(requiredSigners.contains(bankKey)))
                 throw new IllegalArgumentException("Bank signature is required");
-
         }
-
-        else if(commandType instanceof Commands.loanNotification)
-        {
+        else if(commandType instanceof Commands.loanNotification) {
             if(tx.getInputStates().size() !=1)
                 throw new IllegalArgumentException("Must have atleast one input state");
 
@@ -166,10 +140,6 @@ public class FinanceContract implements Contract
             List<String> blacklisted = Arrays.asList("Syntel","Mindtree","IBM","TechMahindra","TCS","J.P. Morgon","Bank of America");
             boolean contains = blacklisted.contains(FinanceAndBankState.class);
 
-
-
-
-
             PublicKey bankKey = inputState.getBank().getOwningKey();
             PublicKey financeAgencyKey = outputState.getfinance().getOwningKey();
 
@@ -178,13 +148,11 @@ public class FinanceContract implements Contract
             if(!(requiredSigners.contains(bankKey)))
                 throw new IllegalArgumentException("Bank signature is required");
         }
-        else
-        {
+        else {
             throw new IllegalArgumentException("Command Type not recognised");
         }
 
     }
-
 
     public interface Commands extends CommandData
     {

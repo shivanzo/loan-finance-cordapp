@@ -22,26 +22,26 @@ import java.util.List;
 
 import static net.corda.core.contracts.ContractsDSL.requireThat;
 
-public class BankCreditAgencyFlow
-{
+public class BankCreditAgencyFlow {
+
     @InitiatingFlow
     @StartableByRPC
-    public static class Initiator extends FlowLogic<SignedTransaction>
-    {
+    public static class Initiator extends FlowLogic<SignedTransaction> {
+
         private final Party otherParty;
         private String companyName;
         private final int amount;
         private boolean loanEligibleFlag;
         private UniqueIdentifier linearId;
 
-        public Initiator(int amount,Party otherParty)
-        {
+        public Initiator(int amount,Party otherParty,String companyName) {
+
             System.out.println("Entered this constructor");
             this.amount = amount;
             this.otherParty = otherParty;
+            this.companyName = companyName;
         }
-        public Initiator(Party otherParty, String companyName, int amount, boolean loanEligibleFlag, UniqueIdentifier linearId)
-        {
+        public Initiator(Party otherParty, String companyName, int amount, boolean loanEligibleFlag, UniqueIdentifier linearId) {
             this.otherParty = otherParty;
             this.companyName = companyName;
             this.amount = amount;
@@ -78,27 +78,7 @@ public class BankCreditAgencyFlow
 
         @Suspendable
         @Override
-        public SignedTransaction call() throws FlowException
-        {
-          // try
-          // {
-              // List<StateAndRef<BankAndCreditState>> inputStateList = getServiceHub().getVaultService().queryBy(BankAndCreditState.class).getStates();
-              // System.out.println("Size of the inputStateList : "+ inputStateList.size());
-              // if(inputStateList !=null && !(inputStateList.isEmpty()))
-               //{
-                //   inputStateList.get(0);
-              // }
-              // else
-              // {
-                  // throw new IllegalArgumentException("State Cannot be found");
-              // }
-
-          // }
-          // catch(Exception e)
-          // {
-              // e.printStackTrace();
-             //  System.out.println("Exception occured : "+e);
-           //}
+        public SignedTransaction call() throws FlowException {
             System.out.println("I reached here");
             final Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
             progressTracker.setCurrentStep(LOAN_ELIGIBILITY);
@@ -135,27 +115,22 @@ public class BankCreditAgencyFlow
     public static class Acceptor extends FlowLogic<SignedTransaction> {
 
         private final FlowSession otherPartyFlow;
-
-        public Acceptor(FlowSession otherPartyFlow)
-        {
+        public Acceptor(FlowSession otherPartyFlow) {
             this.otherPartyFlow = otherPartyFlow;
         }
 
         @Suspendable
         @Override
-        public SignedTransaction call() throws FlowException
-        {
+        public SignedTransaction call() throws FlowException {
 
-            class SignTxFlow extends  SignTransactionFlow
-            {
-                public SignTxFlow(FlowSession otherSideSession, ProgressTracker progressTracker)
-                {
+            class SignTxFlow extends  SignTransactionFlow {
+
+                public SignTxFlow(FlowSession otherSideSession, ProgressTracker progressTracker) {
                     super(otherSideSession, progressTracker);
                 }
 
                 @Override
-                protected void checkTransaction(SignedTransaction stx) throws FlowException
-                {
+                protected void checkTransaction(SignedTransaction stx) throws FlowException {
                     requireThat(require -> {
                         ContractState output = stx.getTx().getOutputs().get(0).getData();
                         require.using("This must be an FinanceAndBankState transaction.", output instanceof BankAndCreditState);

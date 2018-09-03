@@ -16,31 +16,29 @@ import net.corda.core.utilities.ProgressTracker;
 
 import static net.corda.core.contracts.ContractsDSL.requireThat;
 
-public class FinanceFlow
-{
+public class FinanceFlow {
+
     @InitiatingFlow
     @StartableByRPC
-    public static class Initiator extends FlowLogic<SignedTransaction>
-    {
+    public static class Initiator extends FlowLogic<SignedTransaction> {
+
         private final Party otherParty;
         private int amount;
         private String companyName;
         private UniqueIdentifier linearId;
 
-        public Initiator(int value, Party otherParty)
-        {
+        public Initiator(int value, Party otherParty,String companyName) {
+            System.out.println(" Entered in this constructor ");
             this.otherParty = otherParty;
             this.amount = amount;
+            this.companyName = companyName;
         }
-
-        public Initiator(Party otherParty, String companyName, int amount, UniqueIdentifier linearId)
-        {
+        public Initiator(Party otherParty, String companyName, int amount, UniqueIdentifier linearId) {
             this.otherParty = otherParty;
             this.amount = amount;
             this.companyName = companyName;
             this.linearId = linearId;
         }
-
         private final ProgressTracker.Step LOAN_REQUEST = new ProgressTracker.Step("Finance Agency sending Loan application for bank");
         private final ProgressTracker.Step VERIFYING_TRANSACTION = new ProgressTracker.Step("Verifying contract constraints.");
         private final ProgressTracker.Step LOAN_ELIGIBILITY = new ProgressTracker.Step("Sending Loan application to credit rating agecny to check loan eligibilty and CIBIL score");
@@ -73,17 +71,17 @@ public class FinanceFlow
 
         @Suspendable
         @Override
-        public SignedTransaction call() throws FlowException
-        {
+        public SignedTransaction call() throws FlowException {
             final Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
             //Stage 1
             progressTracker.setCurrentStep(LOAN_REQUEST);
             //Generate an unsigned transaction
             Party me = getServiceHub().getMyInfo().getLegalIdentities().get(0);
             FinanceAndBankState financeBankState = new FinanceAndBankState(me, otherParty, companyName,amount, new UniqueIdentifier());
-            final Command<FinanceContract.Commands.InitiateLoan> initiateLoanCommand = new Command<FinanceContract.Commands.InitiateLoan>(new FinanceContract.Commands.InitiateLoan(), ImmutableList.of(financeBankState.getBank().getOwningKey(), financeBankState.getBajajFinance().getOwningKey()));
+            final Command<FinanceContract.Commands.InitiateLoan> initiateLoanCommand = new Command<FinanceContract.Commands.InitiateLoan>(new FinanceContract.Commands.InitiateLoan(), ImmutableList.of(financeBankState.getBank().getOwningKey(), financeBankState.getfinance().getOwningKey()));
             final TransactionBuilder txBuilder = new TransactionBuilder(notary)
-                    .addOutputState(financeBankState, FinanceContract.TEMPLATE_CONTRACT_ID).addCommand(initiateLoanCommand);
+                    .addOutputState(financeBankState, FinanceContract.TEMPLATE_CONTRACT_ID)
+                    .addCommand(initiateLoanCommand);
             progressTracker.setCurrentStep(VERIFYING_TRANSACTION);
             txBuilder.verify(getServiceHub());
             //stage 3
@@ -102,8 +100,8 @@ public class FinanceFlow
         }
     }
         @InitiatedBy(Initiator.class)
-        public static class Acceptor extends FlowLogic<SignedTransaction>
-        {
+        public static class Acceptor extends FlowLogic<SignedTransaction> {
+
             private final FlowSession otherPartyFlow;
             public Acceptor(FlowSession otherPartyFlow)
             {
@@ -112,15 +110,13 @@ public class FinanceFlow
 
             @Suspendable
             @Override
-            public SignedTransaction call() throws FlowException
-            {
+            public SignedTransaction call() throws FlowException {
                 class SignTxFlow extends  SignTransactionFlow
                 {
                     public SignTxFlow(FlowSession otherSideSession, ProgressTracker progressTracker)
                     {
                         super(otherSideSession, progressTracker);
                     }
-
                     @Override
                     protected void checkTransaction(SignedTransaction stx) throws FlowException
                     {
