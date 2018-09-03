@@ -12,10 +12,13 @@ import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.flows.*;
 import net.corda.core.identity.Party;
+import net.corda.core.node.services.Vault;
+import net.corda.core.node.services.vault.QueryCriteria;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
 import net.corda.core.utilities.ProgressTracker;
 
+import java.beans.PropertyDescriptor;
 import java.util.List;
 
 import static net.corda.core.contracts.ContractsDSL.requireThat;
@@ -27,10 +30,17 @@ public class BankAndFinanceFlow
     public static class Initiator extends FlowLogic<SignedTransaction>
     {
         private final Party otherParty;
-        private final String companyName;
+        private static String companyName;
         private final int amount;
+        private boolean loanflag;
         UniqueIdentifier linearId = null;
         String id = null;
+
+        public Initiator(int amount,Party otherParty)
+        {
+            this.amount = amount;
+            this.otherParty = otherParty;
+        }
 
         public Initiator(Party otherParty, String companyName, int amount, UniqueIdentifier uniqueIdentifier)
         {
@@ -66,40 +76,46 @@ public class BankAndFinanceFlow
                 FINALISING_TRANSACTION
         );
 
+        public boolean isLoanflag()
+        {
+            return loanflag;
+        }
+
+        public void setLoanflag(boolean loanflag)
+        {
+            this.loanflag = loanflag;
+        }
+
+
         @Suspendable
         @Override
         public SignedTransaction call() throws FlowException
         {
-            List<StateAndRef<BankAndCreditState>> inputStateList = null;
-            try {
-                 inputStateList = getServiceHub().getVaultService().queryBy(BankAndCreditState.class).getStates();
-                if(inputStateList !=null && !(inputStateList.isEmpty()))
-                {
-                    inputStateList.get(0);
-                }
-                else
-                {
-                    throw new IllegalArgumentException("State Cannot be found");
-                }
-            }
-            catch (Exception e)
+            QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.ALL);
+            QueryCriteria.LinearStateQueryCriteria linearStateCriteria = new QueryCriteria.LinearStateQueryCriteria();
+            Vault.Page<FinanceAndBankState> results  = getServiceHub().getVaultService().queryBy(FinanceAndBankState.class,criteria);
+            List<StateAndRef<FinanceAndBankState>> inputStateList = results.getStates();
+            if(inputStateList != null && !(inputStateList.isEmpty()) )
             {
-                e.printStackTrace();
+                inputStateList.get(inputStateList.size()-1);
             }
-
-
+            else
+            {
+                throw new IllegalArgumentException("State Cannot be found");
+            }
 
             final Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
             progressTracker.setCurrentStep(BANK_RESPONSE);
             //Generate an unsigned transaction
             Party me = getServiceHub().getMyInfo().getLegalIdentities().get(0);
-            final StateAndRef<BankAndCreditState> stateAsInput =  inputStateList.get(0);
+            final StateAndRef<FinanceAndBankState> stateAsInput =  inputStateList.get(0);
             linearId = stateAsInput.getState().getData().getLinearId().copy(id,stateAsInput.getState().getData().getLinearId().getId());
             FinanceAndBankState financeBankState = new FinanceAndBankState(me, otherParty,companyName,amount, linearId);
-            final Command<FinanceContract.Commands.InitiateLoan> initiateLoanCommand = new Command<FinanceContract.Commands.InitiateLoan>(new FinanceContract.Commands.InitiateLoan(), ImmutableList.of(financeBankState.getBank().getOwningKey(), financeBankState.getBajajFinance().getOwningKey()));
+            final Command<FinanceContract.Commands.InitiateLoan> initiateLoanCommand = new Command<FinanceContract.Commands.InitiateLoan>(new FinanceContract.Commands.InitiateLoan(), ImmutableList.of(financeBankState.getBank().getOwningKey(), financeBankState.getFinance().getOwningKey()));
             final TransactionBuilder txBuilder = new TransactionBuilder(notary)
                     .addInputState(stateAsInput)
                     .addOutputState(financeBankState, FinanceContract.TEMPLATE_CONTRACT_ID).addCommand(initiateLoanCommand);
+
             //step 2
             progressTracker.setCurrentStep(VERIFYING_TRANSACTION);
             txBuilder.verify(getServiceHub());

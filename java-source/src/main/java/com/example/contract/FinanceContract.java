@@ -10,6 +10,7 @@ import net.corda.core.identity.Party;
 import net.corda.core.transactions.LedgerTransaction;
 
 import java.security.PublicKey;
+import java.util.Arrays;
 import java.util.List;
 
 
@@ -54,7 +55,7 @@ public class FinanceContract implements Contract
                if (financAndBankState.getCompanyName().equalsIgnoreCase("PNB Bank"))
                    throw new IllegalArgumentException("Loan is not provided to the defaulters");
 
-               Party FinanceAgency = financAndBankState.getBajajFinance();
+               Party FinanceAgency = financAndBankState.getfinance();
                PublicKey financeAgencyKey = FinanceAgency.getOwningKey();
 
                if (!(requiredSigners.contains(financeAgencyKey)))
@@ -162,8 +163,15 @@ public class FinanceContract implements Contract
             FinanceAndBankState inputState = (FinanceAndBankState) input;
             FinanceAndBankState outputState = (FinanceAndBankState) output;
 
+            List<String> blacklisted = Arrays.asList("Syntel","Mindtree","IBM","TechMahindra","TCS","J.P. Morgon","Bank of America");
+            boolean contains = blacklisted.contains(FinanceAndBankState.class);
+
+
+
+
+
             PublicKey bankKey = inputState.getBank().getOwningKey();
-            PublicKey financeAgencyKey = outputState.getBajajFinance().getOwningKey();
+            PublicKey financeAgencyKey = outputState.getfinance().getOwningKey();
 
             if(!(requiredSigners.contains(financeAgencyKey)))
                 throw new IllegalArgumentException("financeAgency signature is required");

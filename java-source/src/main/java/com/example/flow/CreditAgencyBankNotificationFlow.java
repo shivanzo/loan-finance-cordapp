@@ -85,7 +85,8 @@ public class CreditAgencyBankNotificationFlow
         @Override
         public SignedTransaction call() throws FlowException
         {
-            QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
+            QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.ALL);
+            QueryCriteria.LinearStateQueryCriteria linearStateCriteria = new QueryCriteria.LinearStateQueryCriteria();
             Vault.Page<BankAndCreditState> results  = getServiceHub().getVaultService().queryBy(BankAndCreditState.class,criteria);
             List<StateAndRef<BankAndCreditState>> inputStateList = results.getStates();
             if(inputStateList != null && !(inputStateList.isEmpty()) )
@@ -96,9 +97,6 @@ public class CreditAgencyBankNotificationFlow
             {
                 throw new IllegalArgumentException("State Cannot be found");
             }
-
-
-
             /*List<StateAndRef<BankAndCreditState>> inputStateList = null;
             try
             {
