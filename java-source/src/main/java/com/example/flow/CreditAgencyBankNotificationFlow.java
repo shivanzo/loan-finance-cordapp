@@ -20,7 +20,6 @@ import net.corda.core.utilities.ProgressTracker;
 
 import java.util.Arrays;
 import java.util.List;
-
 import static net.corda.core.contracts.ContractsDSL.requireThat;
 
 public class CreditAgencyBankNotificationFlow {
@@ -40,14 +39,6 @@ public class CreditAgencyBankNotificationFlow {
             this.otherParty = otherParty;
             this.companyName = companyName;
             this.linearIdFinanceState = linearIdFinanceState;
-        }
-
-        public Initiator(Party otherParty, String companyName, boolean loanEligibleFlag, int amount,UniqueIdentifier linearId) {
-            this.otherParty = otherParty;
-            this.companyName = companyName;
-            this.loanEligibleFlag = loanEligibleFlag;
-            this.amount = amount;
-            this.linearId = linearId;
         }
 
         private final ProgressTracker.Step VERIFYING_TRANSACTION = new ProgressTracker.Step("Verifying contract constraints.");
@@ -77,23 +68,26 @@ public class CreditAgencyBankNotificationFlow {
         public UniqueIdentifier getLinearId() {
             return linearId;
         }
+
         public void setLinearId(UniqueIdentifier linearId) {
             this.linearId = linearId;
         }
+
         public void setCompanyName(String companyName) {
             this.companyName = companyName;
         }
+
         public UniqueIdentifier getLinearIdFinanceState() {
             return linearIdFinanceState;
         }
+
         public boolean isLoanEligibleFlag() {
             return loanEligibleFlag;
         }
 
         @Suspendable
         @Override
-        public SignedTransaction call() throws FlowException
-        {
+        public SignedTransaction call() throws FlowException {
             QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
             Vault.Page<BankAndCreditState> results  = getServiceHub().getVaultService().queryBy(BankAndCreditState.class,criteria);
             List<StateAndRef<BankAndCreditState>> inputStateList = results.getStates();
@@ -129,7 +123,6 @@ public class CreditAgencyBankNotificationFlow {
                 e.printStackTrace();
             }
             /******* END .Validating the linear id fetched from API parameter (Passed by the user)******/
-
             List<String> blacklisted = Arrays.asList("Syntel","Mindtree","IBM","TechMahindra","TCS","J.P. Morgon","Bank of America");
             boolean contains = blacklisted.contains(companyName);
             BankAndCreditState bankAndCreditState = new BankAndCreditState(linearId);
@@ -173,14 +166,13 @@ public class CreditAgencyBankNotificationFlow {
     @InitiatedBy(Initiator.class)
     public static class Acceptor extends FlowLogic<SignedTransaction> {
         private final FlowSession otherPartyFlow;
+
         public Acceptor(FlowSession otherPartyFlow) {
             this.otherPartyFlow = otherPartyFlow;
         }
-
         @Suspendable
         @Override
         public SignedTransaction call() throws FlowException {
-
             class SignTxFlow extends  SignTransactionFlow {
                 public SignTxFlow(FlowSession otherSideSession, ProgressTracker progressTracker) {
                     super(otherSideSession, progressTracker);

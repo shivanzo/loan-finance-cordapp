@@ -131,8 +131,6 @@ public class ExampleApi {
 
             System.out.println("Type 4 pass");
             System.out.println("Current linear State : "+initiator.getLinearId());
-
-
             final String msg = String.format("BAJAJ FINSERV FINANCE. \n Transaction id %s  is successfully committed to ledger.\n ", signedTx.getId());
             return Response.status(CREATED).entity(msg).build();
         } catch (Throwable ex) {
@@ -228,6 +226,7 @@ public class ExampleApi {
         UniqueIdentifier linearIdFinanceState = new UniqueIdentifier();
         UniqueIdentifier uuidFinanceState = linearIdFinanceState.copy(" ",UUID.fromString(financeBankStateLinearId));
         System.out.println("Type 3 pass");
+
         try {
             CreditAgencyBankNotificationFlow.Initiator initiator = new CreditAgencyBankNotificationFlow.Initiator(value,otherParty,company,uuidFinanceState);
             final SignedTransaction signedTx = rpcOps

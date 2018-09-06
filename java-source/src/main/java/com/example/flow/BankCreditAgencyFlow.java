@@ -22,7 +22,6 @@ import java.util.List;
 import static net.corda.core.contracts.ContractsDSL.requireThat;
 
 public class BankCreditAgencyFlow {
-
     @InitiatingFlow
     @StartableByRPC
     public static class Initiator extends FlowLogic<SignedTransaction> {
@@ -41,13 +40,6 @@ public class BankCreditAgencyFlow {
             this.linearIdRequestForLoan =linearIdRequestForLoan;
             System.out.println("linearIdRequestForLoan : "+linearIdRequestForLoan);
         }
-        public Initiator(Party otherParty, String companyName, int amount, boolean loanEligibleFlag, UniqueIdentifier linearId) {
-            this.otherParty = otherParty;
-            this.companyName = companyName;
-            this.amount = amount;
-            this.loanEligibleFlag = false;
-            this.linearId = linearId;
-        }
 
         public UniqueIdentifier getLinearIdRequestForLoan() {
             return linearIdRequestForLoan;
@@ -64,6 +56,7 @@ public class BankCreditAgencyFlow {
         public void setLoanEligibleFlag(boolean loanEligibleFlag) {
             this.loanEligibleFlag = loanEligibleFlag;
         }
+
         public int getAmount() {
             return amount;
         }
@@ -123,8 +116,7 @@ public class BankCreditAgencyFlow {
                     financeStateListResults.get(0);
                 }
             }
-            catch (Exception e)
-            {
+            catch (Exception e) {
                 e.printStackTrace();
             }
             /*******Validation of linear id END *****/
@@ -158,8 +150,8 @@ public class BankCreditAgencyFlow {
 
     @InitiatedBy(Initiator.class)
     public static class Acceptor extends FlowLogic<SignedTransaction> {
-
         private final FlowSession otherPartyFlow;
+
         public Acceptor(FlowSession otherPartyFlow) {
             this.otherPartyFlow = otherPartyFlow;
         }

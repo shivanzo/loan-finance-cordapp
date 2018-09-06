@@ -24,7 +24,6 @@ import java.util.List;
 import static net.corda.core.contracts.ContractsDSL.requireThat;
 
 public class BankAndFinanceFlow {
-
     @InitiatingFlow
     @StartableByRPC
     public static class Initiator extends FlowLogic<SignedTransaction> {
@@ -78,9 +77,11 @@ public class BankAndFinanceFlow {
         public boolean isLoanflag() {
             return loanflag;
         }
+
         public void setLoanflag(boolean loanflag) {
             this.loanflag = loanflag;
         }
+
         public void setLinearId(UniqueIdentifier linearId) {
             this.linearId = linearId;
         }

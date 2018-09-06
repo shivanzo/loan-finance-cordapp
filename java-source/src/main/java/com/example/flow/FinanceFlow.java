@@ -2,22 +2,17 @@ package com.example.flow;
 
 import co.paralleluniverse.fibers.Suspendable;
 import com.example.contract.FinanceContract;
-import com.example.state.BankAndCreditState;
 import com.example.state.FinanceAndBankState;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import net.corda.core.contracts.Command;
 import net.corda.core.contracts.ContractState;
-import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.flows.*;
 import net.corda.core.identity.Party;
-import net.corda.core.node.services.Vault;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
 import net.corda.core.utilities.ProgressTracker;
-
-import java.util.List;
 
 import static net.corda.core.contracts.ContractsDSL.requireThat;
 
@@ -30,18 +25,11 @@ public class FinanceFlow {
         private String companyName;
         private UniqueIdentifier linearId;
 
-        public Initiator(int value, Party otherParty,String companyName) {
+        public Initiator(int amount, Party otherParty,String companyName) {
             System.out.println(" Entered in this constructor ");
             this.otherParty = otherParty;
             this.amount = amount;
             this.companyName = companyName;
-        }
-
-        public Initiator(Party otherParty, String companyName, int amount, UniqueIdentifier linearId) {
-            this.otherParty = otherParty;
-            this.amount = amount;
-            this.companyName = companyName;
-            this.linearId = linearId;
         }
 
         public UniqueIdentifier getLinearId() {
@@ -125,8 +113,8 @@ public class FinanceFlow {
     }
         @InitiatedBy(Initiator.class)
         public static class Acceptor extends FlowLogic<SignedTransaction> {
-
             private final FlowSession otherPartyFlow;
+
             public Acceptor(FlowSession otherPartyFlow)
             {
                 this.otherPartyFlow = otherPartyFlow;
@@ -135,10 +123,8 @@ public class FinanceFlow {
             @Suspendable
             @Override
             public SignedTransaction call() throws FlowException {
-                class SignTxFlow extends  SignTransactionFlow
-                {
-                    public SignTxFlow(FlowSession otherSideSession, ProgressTracker progressTracker)
-                    {
+                class SignTxFlow extends  SignTransactionFlow {
+                    public SignTxFlow(FlowSession otherSideSession, ProgressTracker progressTracker) {
                         super(otherSideSession, progressTracker);
                     }
                     @Override
