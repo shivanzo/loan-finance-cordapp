@@ -8,39 +8,34 @@ import net.corda.core.identity.Party;
 import net.corda.core.serialization.ConstructorForDeserialization;
 import net.corda.core.serialization.CordaSerializable;
 
+import java.io.Serializable;
 import java.util.List;
 
 @CordaSerializable
-public class FinanceAndBankState implements LinearState {
-
+public class FinanceAndBankState implements LinearState,Serializable {
     private Party finance;
     private Party bank;
     private String companyName;
     private int amount;
     private boolean loanEligibleFlag;
+    private  UniqueIdentifier linearIdBankAndCreditState;
     private final UniqueIdentifier linearId;
 
-
-    public FinanceAndBankState(UniqueIdentifier linearId) {
-        this.linearId = linearId;
-    }
-
     @ConstructorForDeserialization
-    public FinanceAndBankState(Party finance, Party bank, String companyName, int amount, UniqueIdentifier linearId) {
+    public FinanceAndBankState(Party finance, Party bank, String companyName, int amount, UniqueIdentifier linearId, boolean loanEligibleFlag) {
         this.finance = finance;
         this.bank = bank;
         this.companyName = companyName;
         this.amount = amount;
         this.linearId = linearId;
+        this.loanEligibleFlag = loanEligibleFlag;
     }
 
-    public Party getfinance()
-    {
+    public Party getfinance() {
         return finance;
     }
 
-    public Party getBank()
-    {
+    public Party getBank() {
         return bank;
     }
 
@@ -54,6 +49,9 @@ public class FinanceAndBankState implements LinearState {
         return amount;
     }
 
+    public void setAmount(int amount) {
+        this.amount = amount;
+    }
 
     public void setCompanyName(String companyName) {
         this.companyName = companyName;
@@ -65,6 +63,14 @@ public class FinanceAndBankState implements LinearState {
 
     public void setLoanEligibleFlag(boolean loanEligibleFlag) {
         this.loanEligibleFlag = loanEligibleFlag;
+    }
+
+    public void setFinance(Party finance) {
+        this.finance = finance;
+    }
+
+    public UniqueIdentifier getLinearIdBankAndCreditState() {
+        return linearIdBankAndCreditState;
     }
 
     @Override

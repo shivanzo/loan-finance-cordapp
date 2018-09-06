@@ -12,8 +12,7 @@ import java.io.Serializable;
 import java.util.List;
 
 @CordaSerializable
-public class BankAndCreditState implements LinearState,Serializable
-{
+public class BankAndCreditState implements LinearState,Serializable {
     private Party bank;
     private Party creditRatingAgency;
     private boolean loanEligibleFlag;

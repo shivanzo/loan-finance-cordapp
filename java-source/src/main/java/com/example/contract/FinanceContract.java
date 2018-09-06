@@ -1,3 +1,4 @@
+/**** @author : Shivan Sawant ***/
 package com.example.contract;
 
 import com.example.state.BankAndCreditState;
@@ -14,12 +15,10 @@ import java.util.Arrays;
 import java.util.List;
 
 public class FinanceContract implements Contract {
-
     public static final String TEMPLATE_CONTRACT_ID = "com.example.contract.FinanceContract";
 
     @Override
     public void verify(LedgerTransaction tx) throws IllegalArgumentException {
-
         if(tx != null && tx.getCommands().size() != 1)
             throw new IllegalArgumentException("Transaction must have one command");
 
@@ -50,7 +49,8 @@ public class FinanceContract implements Contract {
 
                if (!(requiredSigners.contains(financeAgencyKey)))
                    throw new IllegalArgumentException("Finance agency should sign the transaction");
-               }
+
+            }
            catch (Exception e) {
                e.printStackTrace();
                System.out.println("Exception "+e);
@@ -73,6 +73,13 @@ public class FinanceContract implements Contract {
 
                if(!(output instanceof BankAndCreditState))
                    throw new IllegalArgumentException("Output must of BankAndCredit State");
+
+               List<String> blacklisted = Arrays.asList("Syntel","Mindtree","IBM","TechMahindra","TCS","J.P. Morgon","Bank of America");
+               boolean contains = blacklisted.contains(FinanceAndBankState.class);
+
+               if(contains) {
+                   throw new IllegalArgumentException("Loan is not provided to defaulters");
+               }
 
                BankAndCreditState inputState = (BankAndCreditState)input;
                BankAndCreditState outputState = (BankAndCreditState)output;
@@ -106,6 +113,13 @@ public class FinanceContract implements Contract {
             if(!(output instanceof BankAndCreditState))
                 throw new IllegalArgumentException("Output must of BankAndCredit State");
 
+            List<String> blacklisted = Arrays.asList("Syntel","Mindtree","IBM","TechMahindra","TCS","J.P. Morgon","Bank of America");
+            boolean contains = blacklisted.contains(FinanceAndBankState.class);
+
+            if(contains) {
+                throw new IllegalArgumentException("Loan is not provided to defaulters");
+            }
+
             BankAndCreditState inputState = (BankAndCreditState) input;
             BankAndCreditState outputState = (BankAndCreditState) output;
 
@@ -127,7 +141,6 @@ public class FinanceContract implements Contract {
             ContractState input = tx.getInput(0);
             ContractState output = tx.getOutput(0);
 
-
             if(!(input instanceof FinanceAndBankState))
                 throw new IllegalArgumentException("input should be of the type BankAndCreditState");
 
@@ -140,6 +153,10 @@ public class FinanceContract implements Contract {
             List<String> blacklisted = Arrays.asList("Syntel","Mindtree","IBM","TechMahindra","TCS","J.P. Morgon","Bank of America");
             boolean contains = blacklisted.contains(FinanceAndBankState.class);
 
+            if(contains) {
+                throw new IllegalArgumentException("Loan is not provided to defaulters");
+            }
+
             PublicKey bankKey = inputState.getBank().getOwningKey();
             PublicKey financeAgencyKey = outputState.getfinance().getOwningKey();
 
@@ -151,7 +168,6 @@ public class FinanceContract implements Contract {
         else {
             throw new IllegalArgumentException("Command Type not recognised");
         }
-
     }
 
     public interface Commands extends CommandData

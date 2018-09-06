@@ -24,22 +24,22 @@ import java.util.List;
 import static net.corda.core.contracts.ContractsDSL.requireThat;
 
 public class CreditAgencyBankNotificationFlow {
-
     @InitiatingFlow
     @StartableByRPC
     public static class Initiator extends FlowLogic<SignedTransaction> {
-
         private final Party otherParty;
         private  String companyName;
         private boolean loanEligibleFlag;
         private final int amount;
         UniqueIdentifier linearId = null;
+        UniqueIdentifier linearIdFinanceState = null;
         String id = null;
 
-        public Initiator(int amount, Party otherParty,String companyName) {
+        public Initiator(int amount, Party otherParty,String companyName,UniqueIdentifier linearIdFinanceState) {
             this.amount = amount;
             this.otherParty = otherParty;
             this.companyName = companyName;
+            this.linearIdFinanceState = linearIdFinanceState;
         }
 
         public Initiator(Party otherParty, String companyName, boolean loanEligibleFlag, int amount,UniqueIdentifier linearId) {
@@ -48,10 +48,6 @@ public class CreditAgencyBankNotificationFlow {
             this.loanEligibleFlag = loanEligibleFlag;
             this.amount = amount;
             this.linearId = linearId;
-        }
-
-        public boolean isLoanEligibleFlag() {
-            return loanEligibleFlag;
         }
 
         private final ProgressTracker.Step VERIFYING_TRANSACTION = new ProgressTracker.Step("Verifying contract constraints.");
@@ -70,7 +66,6 @@ public class CreditAgencyBankNotificationFlow {
                 return FinalityFlow.Companion.tracker();
             }
         };
-
         private final ProgressTracker progressTracker = new ProgressTracker(
                 VERIFYING_TRANSACTION,
                 SIGNING_TRANSACTION,
@@ -82,9 +77,17 @@ public class CreditAgencyBankNotificationFlow {
         public UniqueIdentifier getLinearId() {
             return linearId;
         }
-
         public void setLinearId(UniqueIdentifier linearId) {
             this.linearId = linearId;
+        }
+        public void setCompanyName(String companyName) {
+            this.companyName = companyName;
+        }
+        public UniqueIdentifier getLinearIdFinanceState() {
+            return linearIdFinanceState;
+        }
+        public boolean isLoanEligibleFlag() {
+            return loanEligibleFlag;
         }
 
         @Suspendable
@@ -92,7 +95,6 @@ public class CreditAgencyBankNotificationFlow {
         public SignedTransaction call() throws FlowException
         {
             QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
-            //QueryCriteria.LinearStateQueryCriteria linearStateCriteria = new QueryCriteria.LinearStateQueryCriteria();
             Vault.Page<BankAndCreditState> results  = getServiceHub().getVaultService().queryBy(BankAndCreditState.class,criteria);
             List<StateAndRef<BankAndCreditState>> inputStateList = results.getStates();
             if(inputStateList != null && !(inputStateList.isEmpty()) ) {
@@ -103,9 +105,33 @@ public class CreditAgencyBankNotificationFlow {
                 throw new IllegalArgumentException("State Cannot be found");
             }
 
+            /*******Validating the linear id fetched from API parameter (Passed by the user)******/
+            try {
+                QueryCriteria criteriaFinanceState = new QueryCriteria.LinearStateQueryCriteria(
+                        null,
+                        ImmutableList.of(linearIdFinanceState),
+                        Vault.StateStatus.UNCONSUMED,
+                        null);
+
+                Vault.Page<FinanceAndBankState> resultsFinanceState  = getServiceHub().getVaultService().queryBy(FinanceAndBankState.class,criteria);
+                List<StateAndRef<FinanceAndBankState>> financeStateListResults = resultsFinanceState.getStates();
+                System.out.println("size of list financeStateListResults : "+financeStateListResults.size());
+                if (financeStateListResults.size() < 1 && financeStateListResults.isEmpty()) {
+                    System.out.println("SIZE : "+financeStateListResults.size());
+                    throw new FlowException("Linearid with id %s not found."+ linearId);
+                }
+                else {
+                    financeStateListResults.get(0);
+                }
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
+            /******* END .Validating the linear id fetched from API parameter (Passed by the user)******/
+
             List<String> blacklisted = Arrays.asList("Syntel","Mindtree","IBM","TechMahindra","TCS","J.P. Morgon","Bank of America");
             boolean contains = blacklisted.contains(companyName);
-
             BankAndCreditState bankAndCreditState = new BankAndCreditState(linearId);
             if(contains) {
                 bankAndCreditState.setLoanEligibleFlag(false);
@@ -114,7 +140,6 @@ public class CreditAgencyBankNotificationFlow {
             else {
                 bankAndCreditState.setLoanEligibleFlag(true);
             }
-
             final Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
             progressTracker.setCurrentStep(LOAN_ELIGIBILITY_RESPONSE);
             Party me = getServiceHub().getMyInfo().getLegalIdentities().get(0);
@@ -146,11 +171,9 @@ public class CreditAgencyBankNotificationFlow {
     }
 
     @InitiatedBy(Initiator.class)
-    public static class Acceptor extends FlowLogic<SignedTransaction>
-    {
+    public static class Acceptor extends FlowLogic<SignedTransaction> {
         private final FlowSession otherPartyFlow;
-        public Acceptor(FlowSession otherPartyFlow)
-        {
+        public Acceptor(FlowSession otherPartyFlow) {
             this.otherPartyFlow = otherPartyFlow;
         }
 
@@ -159,7 +182,6 @@ public class CreditAgencyBankNotificationFlow {
         public SignedTransaction call() throws FlowException {
 
             class SignTxFlow extends  SignTransactionFlow {
-
                 public SignTxFlow(FlowSession otherSideSession, ProgressTracker progressTracker) {
                     super(otherSideSession, progressTracker);
                 }
@@ -170,7 +192,7 @@ public class CreditAgencyBankNotificationFlow {
                     requireThat(require -> {
                         ContractState output = stx.getTx().getOutputs().get(0).getData();
                         require.using("This must be an FinanceAndBankState transaction.", output instanceof BankAndCreditState);
-                        BankAndCreditState iou = (BankAndCreditState) output;
+                        BankAndCreditState bankAndCreditCheck = (BankAndCreditState) output;
                         return null;
                     });
                 }

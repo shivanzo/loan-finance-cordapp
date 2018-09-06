@@ -2,26 +2,29 @@ package com.example.flow;
 
 import co.paralleluniverse.fibers.Suspendable;
 import com.example.contract.FinanceContract;
+import com.example.state.BankAndCreditState;
 import com.example.state.FinanceAndBankState;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import net.corda.core.contracts.Command;
 import net.corda.core.contracts.ContractState;
+import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.flows.*;
 import net.corda.core.identity.Party;
+import net.corda.core.node.services.Vault;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
 import net.corda.core.utilities.ProgressTracker;
 
+import java.util.List;
+
 import static net.corda.core.contracts.ContractsDSL.requireThat;
 
 public class FinanceFlow {
-
     @InitiatingFlow
     @StartableByRPC
     public static class Initiator extends FlowLogic<SignedTransaction> {
-
         private final Party otherParty;
         private int amount;
         private String companyName;
@@ -33,12 +36,33 @@ public class FinanceFlow {
             this.amount = amount;
             this.companyName = companyName;
         }
+
         public Initiator(Party otherParty, String companyName, int amount, UniqueIdentifier linearId) {
             this.otherParty = otherParty;
             this.amount = amount;
             this.companyName = companyName;
             this.linearId = linearId;
         }
+
+        public UniqueIdentifier getLinearId() {
+            return linearId;
+        }
+        public int getAmount() {
+            return amount;
+        }
+
+        public void setAmount(int amount) {
+            this.amount = amount;
+        }
+
+        public Party getOtherParty() {
+            return otherParty;
+        }
+
+        public void setCompanyName(String companyName) {
+            this.companyName = companyName;
+        }
+
         private final ProgressTracker.Step LOAN_REQUEST = new ProgressTracker.Step("Finance Agency sending Loan application for bank");
         private final ProgressTracker.Step VERIFYING_TRANSACTION = new ProgressTracker.Step("Verifying contract constraints.");
         private final ProgressTracker.Step LOAN_ELIGIBILITY = new ProgressTracker.Step("Sending Loan application to credit rating agecny to check loan eligibilty and CIBIL score");
@@ -77,7 +101,7 @@ public class FinanceFlow {
             progressTracker.setCurrentStep(LOAN_REQUEST);
             //Generate an unsigned transaction
             Party me = getServiceHub().getMyInfo().getLegalIdentities().get(0);
-            FinanceAndBankState financeBankState = new FinanceAndBankState(me, otherParty, companyName,amount, new UniqueIdentifier());
+            FinanceAndBankState financeBankState = new FinanceAndBankState(me, otherParty, companyName,amount, new UniqueIdentifier(),false);
             final Command<FinanceContract.Commands.InitiateLoan> initiateLoanCommand = new Command<FinanceContract.Commands.InitiateLoan>(new FinanceContract.Commands.InitiateLoan(), ImmutableList.of(financeBankState.getBank().getOwningKey(), financeBankState.getfinance().getOwningKey()));
             final TransactionBuilder txBuilder = new TransactionBuilder(notary)
                     .addOutputState(financeBankState, FinanceContract.TEMPLATE_CONTRACT_ID)
@@ -123,7 +147,7 @@ public class FinanceFlow {
                         requireThat(require -> {
                             ContractState output = stx.getTx().getOutputs().get(0).getData();
                             require.using("This must be an FinanceAndBankState transaction.", output instanceof FinanceAndBankState);
-                            FinanceAndBankState iou = (FinanceAndBankState) output;
+                            FinanceAndBankState financeCheck = (FinanceAndBankState) output;
                             return null;
                         });
                     }
