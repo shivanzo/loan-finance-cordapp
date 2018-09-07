@@ -105,8 +105,7 @@ public class BankCreditAgencyFlow {
                 List<StateAndRef<FinanceAndBankState>> financeStateListResults = results.getStates();
                 System.out.println("size of list financeStateListResults : "+financeStateListResults.size());
                 if (financeStateListResults.size() < 1 && financeStateListResults.isEmpty()) {
-                    System.out.println("SIZE : "+financeStateListResults.size());
-                    throw new FlowException("Linearid with id %s not found."+ linearId);
+                    throw new FlowException("Linearid with id %s not found."+ linearIdRequestForLoan);
                 }
             }
             catch (Exception e) {

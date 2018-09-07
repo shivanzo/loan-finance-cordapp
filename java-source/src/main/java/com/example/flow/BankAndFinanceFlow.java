@@ -97,15 +97,13 @@ public class BankAndFinanceFlow {
             QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
             Vault.Page<FinanceAndBankState> results  = getServiceHub().getVaultService().queryBy(FinanceAndBankState.class,criteria);
             List<StateAndRef<FinanceAndBankState>> inputStateList = results.getStates();
-            if(inputStateList != null && !(inputStateList.isEmpty()) ) {
-                inputStateList.get(0);
-                System.out.println("List of States : "+inputStateList.get(0));
-            }
-            else {
+
+            if((inputStateList == null) || (inputStateList.isEmpty()) || (inputStateList.size() < 1) ) {
                 throw new IllegalArgumentException("State Cannot be found : "+inputStateList.size());
             }
 
             StateAndRef<FinanceAndBankState> inputState = null;
+
             while( i <inputStateList.size()) {
                 StateAndRef<FinanceAndBankState> stateAsInput = inputStateList.get(i);
                 if(stateAsInput.getState().getData().getLinearId().equals(linearIdFinance)){
@@ -128,11 +126,7 @@ public class BankAndFinanceFlow {
                 List<StateAndRef<FinanceAndBankState>> financeStateListResults = resultsFinanceState.getStates();
                 System.out.println("size of list financeStateListResults : "+financeStateListResults.size());
                 if (financeStateListResults.size() < 1 && financeStateListResults.isEmpty()) {
-                    System.out.println("SIZE : "+financeStateListResults.size());
                     throw new FlowException("Linearid with id %s not found."+ linearIdFinance);
-                }
-                else {
-                    financeStateListResults.get(0);
                 }
             }
             catch (Exception e) {

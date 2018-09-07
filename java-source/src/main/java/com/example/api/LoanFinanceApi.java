@@ -12,7 +12,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.UniqueIdentifier;
-import net.corda.core.flows.FlowException;
 import net.corda.core.identity.CordaX500Name;
 import net.corda.core.identity.Party;
 import net.corda.core.messaging.CordaRPCOps;
@@ -27,7 +26,6 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.lang.reflect.Field;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -38,16 +36,15 @@ import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
 import static javax.ws.rs.core.Response.Status.CREATED;
 import static javax.ws.rs.core.Response.Status.OK;
 
-@Path("example")
-public class ExampleApi {
-
+@Path("loanApp")
+public class LoanFinanceApi {
     private final CordaRPCOps rpcOps;
     private final CordaX500Name myLegalName;
     private final List<String> serviceNames = ImmutableList.of("Notary");
 
-    static private final Logger logger = LoggerFactory.getLogger(ExampleApi.class);
+    static private final Logger logger = LoggerFactory.getLogger(LoanFinanceApi.class);
 
-    public ExampleApi(CordaRPCOps rpcOps) {
+    public LoanFinanceApi(CordaRPCOps rpcOps) {
         this.rpcOps = rpcOps;
         this.myLegalName = rpcOps.nodeInfo().getLegalIdentities().get(0).getName();
     }
@@ -131,7 +128,7 @@ public class ExampleApi {
 
             System.out.println("Type 4 pass");
             System.out.println("Current linear State : "+initiator.getLinearId());
-            final String msg = String.format("BAJAJ FINSERV FINANCE. \n Transaction id %s  is successfully committed to ledger.\n ", signedTx.getId());
+            final String msg = String.format("FINANCE AGENCY OF WALES. \n Transaction id %s  is successfully committed to ledger.\n ", signedTx.getId());
             return Response.status(CREATED).entity(msg).build();
         } catch (Throwable ex) {
             final String msg = ex.getMessage();

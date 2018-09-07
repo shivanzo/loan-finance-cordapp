@@ -94,19 +94,15 @@ public class CreditAgencyBankNotificationFlow {
             QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
             Vault.Page<BankAndCreditState> results  = getServiceHub().getVaultService().queryBy(BankAndCreditState.class,criteria);
             List<StateAndRef<BankAndCreditState>> inputStateList = results.getStates();
-            if(inputStateList != null && !(inputStateList.isEmpty()) ) {
-                inputStateList.get(0);
-                System.out.println("List of States : "+inputStateList.get(0));
-            }
-            else {
+            if(inputStateList == null || inputStateList.isEmpty() || inputStateList.size() < 1 ) {
                 throw new IllegalArgumentException("State Cannot be found : "+inputStateList.size());
             }
 
             StateAndRef<BankAndCreditState> inputState = null;
             while( i <inputStateList.size()) {
                 StateAndRef<BankAndCreditState> stateAsInput = inputStateList.get(i);
+
                 if(stateAsInput.getState().getData().getLinearId().equals(linearIdBankState)){
-                    System.out.println("Entered this wowo");
                     linearIdBankState = stateAsInput.getState().getData().getLinearId();
                     inputState =  inputStateList.get(i);
                     break;
@@ -124,12 +120,8 @@ public class CreditAgencyBankNotificationFlow {
                 Vault.Page<FinanceAndBankState> resultsFinanceState  = getServiceHub().getVaultService().queryBy(FinanceAndBankState.class,criteriaFinanceState);
                 List<StateAndRef<FinanceAndBankState>> financeStateListResults = resultsFinanceState.getStates();
                 System.out.println("size of list financeStateListResults : "+financeStateListResults.size());
-                if (financeStateListResults.size() < 1 && financeStateListResults.isEmpty()) {
-                    System.out.println("SIZE : "+financeStateListResults.size());
+                if (financeStateListResults.size() < 1 || financeStateListResults.isEmpty()) {
                     throw new FlowException("Linearid with id %s not found."+ linearIdFinanceState);
-                }
-                else {
-                    financeStateListResults.get(0);
                 }
             }
             catch (Exception e)
@@ -147,10 +139,10 @@ public class CreditAgencyBankNotificationFlow {
             else {
                 bankAndCreditState.setLoanEligibleFlag(true);
             }
+
             final Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
             progressTracker.setCurrentStep(LOAN_ELIGIBILITY_RESPONSE);
             Party me = getServiceHub().getMyInfo().getLegalIdentities().get(0);
-
             final StateAndRef<BankAndCreditState> stateAsInput =  inputStateList.get(0);
             linearId = linearIdBankState;//stateAsInput.getState().getData().getLinearId().copy(id,stateAsInput.getState().getData().getLinearId().getId());
             BankAndCreditState bankAndCreditStates = new BankAndCreditState(me,otherParty,true, companyName,amount,linearId);

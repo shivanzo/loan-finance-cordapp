@@ -1,6 +1,6 @@
 package com.example.plugin;
 
-import com.example.api.ExampleApi;
+import com.example.api.LoanFinanceApi;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -15,7 +15,7 @@ public class ExamplePlugin implements WebServerPluginRegistry {
     /**
      * A list of classes that expose web APIs.
      */
-    private final List<Function<CordaRPCOps, ?>> webApis = ImmutableList.of(ExampleApi::new);
+    private final List<Function<CordaRPCOps, ?>> webApis = ImmutableList.of(LoanFinanceApi::new);
 
     /**
      * A list of directories in the resources directory that will be served by Jetty under /web.
