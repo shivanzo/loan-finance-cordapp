@@ -122,7 +122,6 @@ public class FinanceContract implements Contract {
 
             BankAndCreditState inputState = (BankAndCreditState) input;
             BankAndCreditState outputState = (BankAndCreditState) output;
-
             PublicKey creditAgencyKey = inputState.getCreditRatingAgency().getOwningKey();
             PublicKey bankKey = outputState.getbank().getOwningKey();
 

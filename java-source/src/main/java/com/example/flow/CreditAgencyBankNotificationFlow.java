@@ -32,13 +32,15 @@ public class CreditAgencyBankNotificationFlow {
         private final int amount;
         UniqueIdentifier linearId = null;
         UniqueIdentifier linearIdFinanceState = null;
+        UniqueIdentifier linearIdBankState = null;
         String id = null;
 
-        public Initiator(int amount, Party otherParty,String companyName,UniqueIdentifier linearIdFinanceState) {
+        public Initiator(int amount, Party otherParty,String companyName,UniqueIdentifier linearIdFinanceState,UniqueIdentifier linearIdBankState) {
             this.amount = amount;
             this.otherParty = otherParty;
             this.companyName = companyName;
             this.linearIdFinanceState = linearIdFinanceState;
+            this.linearIdBankState = linearIdBankState;
         }
 
         private final ProgressTracker.Step VERIFYING_TRANSACTION = new ProgressTracker.Step("Verifying contract constraints.");
@@ -88,17 +90,29 @@ public class CreditAgencyBankNotificationFlow {
         @Suspendable
         @Override
         public SignedTransaction call() throws FlowException {
+            int i=0;
             QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
             Vault.Page<BankAndCreditState> results  = getServiceHub().getVaultService().queryBy(BankAndCreditState.class,criteria);
             List<StateAndRef<BankAndCreditState>> inputStateList = results.getStates();
             if(inputStateList != null && !(inputStateList.isEmpty()) ) {
-                inputStateList.get(inputStateList.size()-1);
+                inputStateList.get(0);
                 System.out.println("List of States : "+inputStateList.get(0));
             }
             else {
-                throw new IllegalArgumentException("State Cannot be found");
+                throw new IllegalArgumentException("State Cannot be found : "+inputStateList.size());
             }
 
+            StateAndRef<BankAndCreditState> inputState = null;
+            while( i <inputStateList.size()) {
+                StateAndRef<BankAndCreditState> stateAsInput = inputStateList.get(i);
+                if(stateAsInput.getState().getData().getLinearId().equals(linearIdBankState)){
+                    System.out.println("Entered this wowo");
+                    linearIdBankState = stateAsInput.getState().getData().getLinearId();
+                    inputState =  inputStateList.get(i);
+                    break;
+                }
+                i++;
+            }
             /*******Validating the linear id fetched from API parameter (Passed by the user)******/
             try {
                 QueryCriteria criteriaFinanceState = new QueryCriteria.LinearStateQueryCriteria(
@@ -107,12 +121,12 @@ public class CreditAgencyBankNotificationFlow {
                         Vault.StateStatus.UNCONSUMED,
                         null);
 
-                Vault.Page<FinanceAndBankState> resultsFinanceState  = getServiceHub().getVaultService().queryBy(FinanceAndBankState.class,criteria);
+                Vault.Page<FinanceAndBankState> resultsFinanceState  = getServiceHub().getVaultService().queryBy(FinanceAndBankState.class,criteriaFinanceState);
                 List<StateAndRef<FinanceAndBankState>> financeStateListResults = resultsFinanceState.getStates();
                 System.out.println("size of list financeStateListResults : "+financeStateListResults.size());
                 if (financeStateListResults.size() < 1 && financeStateListResults.isEmpty()) {
                     System.out.println("SIZE : "+financeStateListResults.size());
-                    throw new FlowException("Linearid with id %s not found."+ linearId);
+                    throw new FlowException("Linearid with id %s not found."+ linearIdFinanceState);
                 }
                 else {
                     financeStateListResults.get(0);
@@ -136,12 +150,13 @@ public class CreditAgencyBankNotificationFlow {
             final Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
             progressTracker.setCurrentStep(LOAN_ELIGIBILITY_RESPONSE);
             Party me = getServiceHub().getMyInfo().getLegalIdentities().get(0);
-            final StateAndRef<BankAndCreditState> stateAsInput =  inputStateList.get(inputStateList.size()-1);
-            linearId = stateAsInput.getState().getData().getLinearId().copy(id,stateAsInput.getState().getData().getLinearId().getId());
+
+            final StateAndRef<BankAndCreditState> stateAsInput =  inputStateList.get(0);
+            linearId = linearIdBankState;//stateAsInput.getState().getData().getLinearId().copy(id,stateAsInput.getState().getData().getLinearId().getId());
             BankAndCreditState bankAndCreditStates = new BankAndCreditState(me,otherParty,true, companyName,amount,linearId);
             final Command<FinanceContract.Commands.receiveCreditApproval> receiveCreditApproval = new Command<FinanceContract.Commands.receiveCreditApproval>(new FinanceContract.Commands.receiveCreditApproval(),ImmutableList.of(bankAndCreditStates.getCreditRatingAgency().getOwningKey(),bankAndCreditStates.getbank().getOwningKey()));
             final TransactionBuilder txBuilder = new TransactionBuilder(notary)
-                     .addInputState(stateAsInput)
+                    .addInputState(inputState)
                     .addOutputState(bankAndCreditStates,FinanceContract.TEMPLATE_CONTRACT_ID)
                     .addCommand(receiveCreditApproval);
             //step 2

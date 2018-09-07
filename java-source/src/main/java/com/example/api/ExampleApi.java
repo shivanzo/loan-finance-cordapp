@@ -169,7 +169,7 @@ public class ExampleApi {
         }
         System.out.println("Type 3 pass");
         UniqueIdentifier linearIdFinanceState = new UniqueIdentifier();
-        UniqueIdentifier uuidFinanceState = linearIdFinanceState.copy(" ",UUID.fromString(financeBankStateLinearId));
+        UniqueIdentifier uuidFinanceState = linearIdFinanceState.copy("",UUID.fromString(financeBankStateLinearId));
         System.out.println("Actual Linear Id : "+uuidFinanceState);
 
         try {
@@ -197,7 +197,7 @@ public class ExampleApi {
      */
     @PUT
     @Path("credit-response")
-    public Response creditAgencyResponse(@QueryParam("company") String company, @QueryParam("value")int value ,@QueryParam("partyName") CordaX500Name partyName, @QueryParam("linearid") String financeBankStateLinearId) throws InterruptedException, ExecutionException {
+    public Response creditAgencyResponse(@QueryParam("company") String company, @QueryParam("value")int value ,@QueryParam("partyName") CordaX500Name partyName, @QueryParam("financeLinearid") String financeBankStateLinearId, @QueryParam("bankLinearid") String bankCreditStateLinearId) throws InterruptedException, ExecutionException {
 
         System.out.println("partyName : "+partyName);
         if (value <= 0) {
@@ -223,14 +223,21 @@ public class ExampleApi {
             return Response.status(BAD_REQUEST).entity("linear id of FinanceAndBank State is missing . \n").build();
         }
 
+        if(bankCreditStateLinearId == null) {
+            return Response.status(BAD_REQUEST).entity("linear id of previous unconsumed state cannot be empty. \n").build();
+        }
+
         UniqueIdentifier linearIdFinanceState = new UniqueIdentifier();
+        UniqueIdentifier linearIdBankState = new UniqueIdentifier();
         UniqueIdentifier uuidFinanceState = linearIdFinanceState.copy(" ",UUID.fromString(financeBankStateLinearId));
+        UniqueIdentifier uuidBankState = linearIdBankState.copy(" ",UUID.fromString(bankCreditStateLinearId));
+
         System.out.println("Type 3 pass");
 
         try {
-            CreditAgencyBankNotificationFlow.Initiator initiator = new CreditAgencyBankNotificationFlow.Initiator(value,otherParty,company,uuidFinanceState);
+            CreditAgencyBankNotificationFlow.Initiator initiator = new CreditAgencyBankNotificationFlow.Initiator(value,otherParty,company,uuidFinanceState,uuidBankState);
             final SignedTransaction signedTx = rpcOps
-                    .startTrackedFlowDynamic(initiator.getClass(), value, otherParty,company,uuidFinanceState)
+                    .startTrackedFlowDynamic(initiator.getClass(), value, otherParty,company,uuidFinanceState,uuidBankState)
                     .getReturnValue()
                     .get();
 

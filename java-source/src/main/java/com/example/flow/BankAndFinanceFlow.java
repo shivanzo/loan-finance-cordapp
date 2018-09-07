@@ -93,16 +93,29 @@ public class BankAndFinanceFlow {
         @Suspendable
         @Override
         public SignedTransaction call() throws FlowException {
+            int i=0;
             QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
             Vault.Page<FinanceAndBankState> results  = getServiceHub().getVaultService().queryBy(FinanceAndBankState.class,criteria);
             List<StateAndRef<FinanceAndBankState>> inputStateList = results.getStates();
             if(inputStateList != null && !(inputStateList.isEmpty()) ) {
-                inputStateList.get(inputStateList.size()-1);
+                inputStateList.get(0);
+                System.out.println("List of States : "+inputStateList.get(0));
             }
             else {
-                throw new IllegalArgumentException("State Cannot be found");
+                throw new IllegalArgumentException("State Cannot be found : "+inputStateList.size());
             }
 
+            StateAndRef<FinanceAndBankState> inputState = null;
+            while( i <inputStateList.size()) {
+                StateAndRef<FinanceAndBankState> stateAsInput = inputStateList.get(i);
+                if(stateAsInput.getState().getData().getLinearId().equals(linearIdFinance)){
+                    linearIdFinance = stateAsInput.getState().getData().getLinearId();
+                    inputState = inputStateList.get(i);
+                    i=inputStateList.size();
+                    break;
+                }
+                i++;
+            }
             /***** linear id of financeState Checking if it exist *****/
             try {
                 QueryCriteria criteriaFinanceState = new QueryCriteria.LinearStateQueryCriteria(
@@ -116,15 +129,13 @@ public class BankAndFinanceFlow {
                 System.out.println("size of list financeStateListResults : "+financeStateListResults.size());
                 if (financeStateListResults.size() < 1 && financeStateListResults.isEmpty()) {
                     System.out.println("SIZE : "+financeStateListResults.size());
-                    throw new FlowException("Linearid with id %s not found."+ linearId);
+                    throw new FlowException("Linearid with id %s not found."+ linearIdFinance);
                 }
                 else {
                     financeStateListResults.get(0);
                 }
-
             }
-            catch (Exception e)
-            {
+            catch (Exception e) {
                 e.printStackTrace();
             }
             /*****END. linear id of financeState Checking if it exist *****/
@@ -133,9 +144,9 @@ public class BankAndFinanceFlow {
             progressTracker.setCurrentStep(BANK_RESPONSE);
             //Generate an unsigned transaction
             Party me = getServiceHub().getMyInfo().getLegalIdentities().get(0);
-            final StateAndRef<FinanceAndBankState> stateAsInput =  inputStateList.get(inputStateList.size()-1);
-            linearId = stateAsInput.getState().getData().getLinearId().copy(id,stateAsInput.getState().getData().getLinearId().getId());
-            //FinanceAndBankState financeBankState = new FinanceAndBankState(me, otherParty,companyName,amount, linearId);
+           // final StateAndRef<FinanceAndBankState> stateAsInput =  inputStateList.get(0);
+           // linearId = stateAsInput.getState().getData().getLinearId().copy(id,stateAsInput.getState().getData().getLinearId().getId());
+            linearId = linearIdFinance;
             List<String> blacklisted = Arrays.asList("Syntel","Mindtree","IBM","TechMahindra","TCS","J.P. Morgon","Bank of America");
             boolean contains = blacklisted.contains(companyName);
             FinanceAndBankState financeAndBankState = null;
@@ -151,7 +162,7 @@ public class BankAndFinanceFlow {
 
             final Command<FinanceContract.Commands.InitiateLoan> initiateLoanCommand = new Command<FinanceContract.Commands.InitiateLoan>(new FinanceContract.Commands.InitiateLoan(), ImmutableList.of(financeAndBankState.getBank().getOwningKey(), financeAndBankState.getfinance().getOwningKey()));
             final TransactionBuilder txBuilder = new TransactionBuilder(notary)
-                    .addInputState(stateAsInput)
+                    .addInputState(inputState)
                     .addOutputState(financeAndBankState, FinanceContract.TEMPLATE_CONTRACT_ID).addCommand(initiateLoanCommand);
 
             //step 2

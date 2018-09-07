@@ -26,7 +26,6 @@ public class FinanceFlow {
         private UniqueIdentifier linearId;
 
         public Initiator(int amount, Party otherParty,String companyName) {
-            System.out.println(" Entered in this constructor ");
             this.otherParty = otherParty;
             this.amount = amount;
             this.companyName = companyName;
@@ -35,20 +34,9 @@ public class FinanceFlow {
         public UniqueIdentifier getLinearId() {
             return linearId;
         }
+
         public int getAmount() {
             return amount;
-        }
-
-        public void setAmount(int amount) {
-            this.amount = amount;
-        }
-
-        public Party getOtherParty() {
-            return otherParty;
-        }
-
-        public void setCompanyName(String companyName) {
-            this.companyName = companyName;
         }
 
         private final ProgressTracker.Step LOAN_REQUEST = new ProgressTracker.Step("Finance Agency sending Loan application for bank");

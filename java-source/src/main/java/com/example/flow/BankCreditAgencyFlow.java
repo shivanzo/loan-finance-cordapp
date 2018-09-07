@@ -33,12 +33,10 @@ public class BankCreditAgencyFlow {
         private UniqueIdentifier linearIdRequestForLoan;
 
         public Initiator(int amount,Party otherParty,String companyName,UniqueIdentifier linearIdRequestForLoan) {
-            System.out.println("Entered this constructor");
             this.amount = amount;
             this.otherParty = otherParty;
             this.companyName = companyName;
             this.linearIdRequestForLoan =linearIdRequestForLoan;
-            System.out.println("linearIdRequestForLoan : "+linearIdRequestForLoan);
         }
 
         public UniqueIdentifier getLinearIdRequestForLoan() {
@@ -92,8 +90,6 @@ public class BankCreditAgencyFlow {
         @Suspendable
         @Override
         public SignedTransaction call() throws FlowException {
-
-            System.out.println("I reached here");
             final Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
             progressTracker.setCurrentStep(LOAN_ELIGIBILITY);
             Party me = getServiceHub().getMyInfo().getLegalIdentities().get(0);
@@ -111,9 +107,6 @@ public class BankCreditAgencyFlow {
                 if (financeStateListResults.size() < 1 && financeStateListResults.isEmpty()) {
                     System.out.println("SIZE : "+financeStateListResults.size());
                     throw new FlowException("Linearid with id %s not found."+ linearId);
-                }
-                else {
-                    financeStateListResults.get(0);
                 }
             }
             catch (Exception e) {
