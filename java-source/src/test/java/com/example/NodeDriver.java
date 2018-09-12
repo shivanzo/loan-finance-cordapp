@@ -24,15 +24,15 @@ public class NodeDriver {
         driver(new DriverParameters().withWaitForAllNodesToFinish(true), dsl -> {
                     List<CordaFuture<NodeHandle>> nodeFutures = ImmutableList.of(
                             dsl.startNode(new NodeParameters()
-                                    .withProvidedName(new CordaX500Name("PartyA", "London", "GB"))
+                                    .withProvidedName(new CordaX500Name("Finance Agency Of London", "London", "GB"))
                                     .withCustomOverrides(ImmutableMap.of("rpcSettings.address", "localhost:10008", "rpcSettings.adminAddress", "localhost:10048", "webAddress", "localhost:10009"))
                                     .withRpcUsers(ImmutableList.of(user))),
                             dsl.startNode(new NodeParameters()
-                                    .withProvidedName(new CordaX500Name("PartyB", "New York", "US"))
+                                    .withProvidedName(new CordaX500Name("Bank", "New York", "US"))
                                     .withCustomOverrides(ImmutableMap.of("rpcSettings.address", "localhost:10011", "rpcSettings.adminAddress", "localhost:10051", "webAddress", "localhost:10012"))
                                     .withRpcUsers(ImmutableList.of(user))),
                             dsl.startNode(new NodeParameters()
-                                    .withProvidedName(new CordaX500Name("PartyC", "Paris", "FR"))
+                                    .withProvidedName(new CordaX500Name("Credit Rating Agency", "Paris", "FR"))
                                     .withCustomOverrides(ImmutableMap.of("rpcSettings.address", "localhost:10014", "rpcSettings.adminAddress", "localhost:10054", "webAddress", "localhost:10015"))
                                     .withRpcUsers(ImmutableList.of(user))));
 

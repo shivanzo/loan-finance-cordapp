@@ -3,6 +3,7 @@ package com.example.flow;
 
 import co.paralleluniverse.fibers.Suspendable;
 import com.example.contract.FinanceContract;
+import com.example.state.BankAndCreditState;
 import com.example.state.FinanceAndBankState;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -18,6 +19,7 @@ import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
 import net.corda.core.utilities.ProgressTracker;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -40,12 +42,6 @@ public class BankAndFinanceFlow {
             this.otherParty = otherParty;
             this.companyName =companyName;
             this.linearIdFinance = linearIdFinance;
-        }
-
-        public Initiator(Party otherParty, String companyName, int amount, UniqueIdentifier uniqueIdentifier) {
-            this.otherParty = otherParty;
-            this.companyName = companyName;
-            this.amount = amount;
         }
 
         private final ProgressTracker.Step VERIFYING_TRANSACTION = new ProgressTracker.Step("Verifying contract constraints.");
@@ -93,7 +89,7 @@ public class BankAndFinanceFlow {
         @Suspendable
         @Override
         public SignedTransaction call() throws FlowException {
-            int i=0;
+           /* int i=0;
             QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
             Vault.Page<FinanceAndBankState> results  = getServiceHub().getVaultService().queryBy(FinanceAndBankState.class,criteria);
             List<StateAndRef<FinanceAndBankState>> inputStateList = results.getStates();
@@ -113,27 +109,29 @@ public class BankAndFinanceFlow {
                     break;
                 }
                 i++;
-            }
-            /***** linear id of financeState Checking if it exist *****/
-            try {
-                QueryCriteria criteriaFinanceState = new QueryCriteria.LinearStateQueryCriteria(
-                        null,
-                        ImmutableList.of(linearIdFinance),
-                        Vault.StateStatus.UNCONSUMED,
-                        null);
+            }*/
 
-                Vault.Page<FinanceAndBankState> resultsFinanceState  = getServiceHub().getVaultService().queryBy(FinanceAndBankState.class,criteria);
-                List<StateAndRef<FinanceAndBankState>> financeStateListResults = resultsFinanceState.getStates();
-                System.out.println("size of list financeStateListResults : "+financeStateListResults.size());
-                if (financeStateListResults.size() < 1 && financeStateListResults.isEmpty()) {
-                    throw new FlowException("Linearid with id %s not found."+ linearIdFinance);
-                }
+            StateAndRef<FinanceAndBankState> inputState = null;
+            QueryCriteria criteria = new QueryCriteria.LinearStateQueryCriteria(
+                    null,
+                    ImmutableList.of(linearIdFinance),
+                    Vault.StateStatus.UNCONSUMED,
+                    null);
+
+            List<UniqueIdentifier> financeStateListValidationResult = new ArrayList<UniqueIdentifier>();
+            List<StateAndRef<FinanceAndBankState>> financeStateListResults = getServiceHub().getVaultService().queryBy(FinanceAndBankState.class,criteria).getStates();
+            if (financeStateListResults.size() == 0 && financeStateListResults.isEmpty()) {
+                throw new FlowException("Linearid with id %s not found."+ linearIdFinance);
             }
-            catch (Exception e) {
-                e.printStackTrace();
+            else
+            {
+                linearId = linearIdFinance;
+                inputState = financeStateListResults.get(0);
             }
+
+            /***** linear id of financeState Checking if it exist *****/
+
             /*****END. linear id of financeState Checking if it exist *****/
-            QueryCriteria.VaultQueryCriteria criteria1 = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
             final Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
             progressTracker.setCurrentStep(BANK_RESPONSE);
             //Generate an unsigned transaction

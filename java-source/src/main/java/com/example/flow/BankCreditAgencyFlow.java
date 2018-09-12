@@ -18,6 +18,7 @@ import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
 import net.corda.core.utilities.ProgressTracker;
 import java.security.PublicKey;
+import java.util.ArrayList;
 import java.util.List;
 import static net.corda.core.contracts.ContractsDSL.requireThat;
 
@@ -93,24 +94,33 @@ public class BankCreditAgencyFlow {
             final Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
             progressTracker.setCurrentStep(LOAN_ELIGIBILITY);
             Party me = getServiceHub().getMyInfo().getLegalIdentities().get(0);
+
             /******Validation of linear id *****/
-            try {
                 QueryCriteria criteria = new QueryCriteria.LinearStateQueryCriteria(
                         null,
                         ImmutableList.of(linearIdRequestForLoan),
                         Vault.StateStatus.UNCONSUMED,
                         null);
 
-                Vault.Page<FinanceAndBankState> results  = getServiceHub().getVaultService().queryBy(FinanceAndBankState.class,criteria);
-                List<StateAndRef<FinanceAndBankState>> financeStateListResults = results.getStates();
-                System.out.println("size of list financeStateListResults : "+financeStateListResults.size());
-                if (financeStateListResults.size() < 1 && financeStateListResults.isEmpty()) {
+                List<UniqueIdentifier> financeStateListValidationResult = new ArrayList<UniqueIdentifier>();
+                List<StateAndRef<FinanceAndBankState>> financeStateListResults = getServiceHub().getVaultService().queryBy(FinanceAndBankState.class,criteria).getStates();
+                if (financeStateListResults.size() == 0 && financeStateListResults.isEmpty()) {
                     throw new FlowException("Linearid with id %s not found."+ linearIdRequestForLoan);
                 }
-            }
-            catch (Exception e) {
-                e.printStackTrace();
-            }
+
+               /* for(StateAndRef<FinanceAndBankState> stateAsInput : financeStateListResults) {
+                    if(stateAsInput.getState().getData().getLinearId().equals(linearIdRequestForLoan)){
+                       financeStateListValidationResult.add(linearIdRequestForLoan);
+                    }
+                    else {
+                        financeStateListValidationResult.clear();
+                    }
+                }
+
+                if(financeStateListValidationResult.size() != 1 && financeStateListValidationResult.size() == 0) {
+                    throw new IllegalArgumentException("Entered linear id / Loan id is not found : "+financeStateListValidationResult.size());
+                }*/
+
             /*******Validation of linear id END *****/
             BankAndCreditState bankAndCreditState = new BankAndCreditState(me,otherParty, loanEligibleFlag, companyName,amount,new UniqueIdentifier());
             PublicKey bankKey = getServiceHub().getMyInfo().getLegalIdentities().get(0).getOwningKey();

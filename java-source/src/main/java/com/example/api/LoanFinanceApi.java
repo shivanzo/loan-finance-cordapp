@@ -95,7 +95,7 @@ public class LoanFinanceApi {
 
     /* by Shivan Sawant */
     /*******start of put request for query param. Shivan Sawant.***/
-    @PUT
+    @POST
     @Path("create-loan")
     public Response loanRequest(@QueryParam("company") String company, @QueryParam("value")int value ,@QueryParam("partyName") CordaX500Name bankNode) throws InterruptedException, ExecutionException {
 
@@ -166,7 +166,7 @@ public class LoanFinanceApi {
         }
         System.out.println("Type 3 pass");
         UniqueIdentifier linearIdFinanceState = new UniqueIdentifier();
-        UniqueIdentifier uuidFinanceState = linearIdFinanceState.copy("",UUID.fromString(financeBankStateLinearId));
+        UniqueIdentifier uuidFinanceState = linearIdFinanceState.copy(null,UUID.fromString(financeBankStateLinearId));
         System.out.println("Actual Linear Id : "+uuidFinanceState);
 
         try {
@@ -226,9 +226,11 @@ public class LoanFinanceApi {
 
         UniqueIdentifier linearIdFinanceState = new UniqueIdentifier();
         UniqueIdentifier linearIdBankState = new UniqueIdentifier();
-        UniqueIdentifier uuidFinanceState = linearIdFinanceState.copy(" ",UUID.fromString(financeBankStateLinearId));
-        UniqueIdentifier uuidBankState = linearIdBankState.copy(" ",UUID.fromString(bankCreditStateLinearId));
+        UniqueIdentifier uuidFinanceState = linearIdFinanceState.copy(null,UUID.fromString(financeBankStateLinearId));
+        UniqueIdentifier uuidBankState = linearIdBankState.copy(null,UUID.fromString(bankCreditStateLinearId));
 
+        System.out.println("linearIdBankState : "+linearIdBankState);
+        System.out.println("linearIdFinanceState : "+linearIdFinanceState);
         System.out.println("Type 3 pass");
 
         try {
@@ -281,7 +283,7 @@ public class LoanFinanceApi {
         System.out.println("Type 3 pass");
 
         UniqueIdentifier linearIdFinanceState = new UniqueIdentifier();
-        UniqueIdentifier uuidFinanceState = linearIdFinanceState.copy(" ",UUID.fromString(financeBankStateLinearId));
+        UniqueIdentifier uuidFinanceState = linearIdFinanceState.copy(null,UUID.fromString(financeBankStateLinearId));
 
         try {
             BankAndFinanceFlow.Initiator initiator = new BankAndFinanceFlow.Initiator(value,otherParty,company,uuidFinanceState);
