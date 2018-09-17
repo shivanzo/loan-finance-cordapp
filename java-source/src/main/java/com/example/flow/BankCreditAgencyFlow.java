@@ -28,13 +28,12 @@ public class BankCreditAgencyFlow {
     public static class Initiator extends FlowLogic<SignedTransaction> {
         private final Party otherParty;
         private String companyName;
-        private final int amount;
+       // private int amount;
         private boolean loanEligibleFlag;
         private UniqueIdentifier linearId;
         private UniqueIdentifier linearIdRequestForLoan;
 
-        public Initiator(int amount,Party otherParty,String companyName,UniqueIdentifier linearIdRequestForLoan) {
-            this.amount = amount;
+        public Initiator(Party otherParty,String companyName,UniqueIdentifier linearIdRequestForLoan) {
             this.otherParty = otherParty;
             this.companyName = companyName;
             this.linearIdRequestForLoan =linearIdRequestForLoan;
@@ -56,9 +55,6 @@ public class BankCreditAgencyFlow {
             this.loanEligibleFlag = loanEligibleFlag;
         }
 
-        public int getAmount() {
-            return amount;
-        }
 
         private final ProgressTracker.Step VERIFYING_TRANSACTION = new ProgressTracker.Step("Verifying contract constraints.");
         private final ProgressTracker.Step LOAN_ELIGIBILITY = new ProgressTracker.Step("Sending Loan application to credit rating agecny to check loan eligibilty and CIBIL score");
@@ -108,21 +104,8 @@ public class BankCreditAgencyFlow {
                     throw new FlowException("Linearid with id %s not found."+ linearIdRequestForLoan);
                 }
 
-               /* for(StateAndRef<FinanceAndBankState> stateAsInput : financeStateListResults) {
-                    if(stateAsInput.getState().getData().getLinearId().equals(linearIdRequestForLoan)){
-                       financeStateListValidationResult.add(linearIdRequestForLoan);
-                    }
-                    else {
-                        financeStateListValidationResult.clear();
-                    }
-                }
-
-                if(financeStateListValidationResult.size() != 1 && financeStateListValidationResult.size() == 0) {
-                    throw new IllegalArgumentException("Entered linear id / Loan id is not found : "+financeStateListValidationResult.size());
-                }*/
-
             /*******Validation of linear id END *****/
-            BankAndCreditState bankAndCreditState = new BankAndCreditState(me,otherParty, loanEligibleFlag, companyName,amount,new UniqueIdentifier());
+            BankAndCreditState bankAndCreditState = new BankAndCreditState(me,otherParty, loanEligibleFlag, companyName,new UniqueIdentifier());
             PublicKey bankKey = getServiceHub().getMyInfo().getLegalIdentities().get(0).getOwningKey();
             PublicKey creditAgencyKey = otherParty.getOwningKey();
             System.out.println("linearIdRequestForLoan : "+linearIdRequestForLoan);

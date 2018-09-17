@@ -33,15 +33,16 @@ public class BankAndFinanceFlow {
         private String companyName;
         private final int amount;
         private boolean loanflag;
-        UniqueIdentifier linearId = null;
+        UniqueIdentifier linearIdBankAndCreditState = null;
         UniqueIdentifier linearIdFinance = null;
-        String id = null;
+        UniqueIdentifier linearId = null;
 
-        public Initiator(int amount,Party otherParty,String companyName,UniqueIdentifier linearIdFinance) {
+        public Initiator(int amount,Party otherParty,String companyName,UniqueIdentifier linearIdFinance,UniqueIdentifier linearIdBankAndCreditState) {
             this.amount = amount;
             this.otherParty = otherParty;
             this.companyName =companyName;
             this.linearIdFinance = linearIdFinance;
+            this.linearIdBankAndCreditState = linearIdBankAndCreditState;
         }
 
         private final ProgressTracker.Step VERIFYING_TRANSACTION = new ProgressTracker.Step("Verifying contract constraints.");
@@ -78,8 +79,12 @@ public class BankAndFinanceFlow {
             this.loanflag = loanflag;
         }
 
-        public void setLinearId(UniqueIdentifier linearId) {
-            this.linearId = linearId;
+        public UniqueIdentifier getLinearIdBankAndCreditState() {
+            return linearIdBankAndCreditState;
+        }
+
+        public void setLinearIdBankAndCreditState(UniqueIdentifier linearIdBankAndCreditState) {
+            this.linearIdBankAndCreditState = linearIdBankAndCreditState;
         }
 
         public UniqueIdentifier getLinearIdFinance() {
@@ -143,13 +148,15 @@ public class BankAndFinanceFlow {
             boolean contains = blacklisted.contains(companyName);
             FinanceAndBankState financeAndBankState = null;
             if(contains) {
-                 financeAndBankState = new FinanceAndBankState(otherParty,me,companyName,amount,linearId,false);
+                 financeAndBankState = new FinanceAndBankState(otherParty,me,companyName,amount,linearId,false,linearIdBankAndCreditState);
                 financeAndBankState.setLoanEligibleFlag(false);
+                financeAndBankState.setLinearIdBankAndCreditState(linearIdBankAndCreditState);
                 throw new IllegalArgumentException("This company is blacklisted for LOAN, Loan is rejected ..!!!");
             }
             else {
-                 financeAndBankState = new FinanceAndBankState(otherParty,me,companyName,amount,linearId,false);
+                 financeAndBankState = new FinanceAndBankState(otherParty,me,companyName,amount,linearId,false,linearIdBankAndCreditState);
                  financeAndBankState.setLoanEligibleFlag(true);
+                financeAndBankState.setLinearIdBankAndCreditState(linearIdBankAndCreditState);
             }
 
             final Command<FinanceContract.Commands.InitiateLoan> initiateLoanCommand = new Command<FinanceContract.Commands.InitiateLoan>(new FinanceContract.Commands.InitiateLoan(), ImmutableList.of(financeAndBankState.getBank().getOwningKey(), financeAndBankState.getfinance().getOwningKey()));

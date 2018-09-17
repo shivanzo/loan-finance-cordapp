@@ -14,6 +14,8 @@ import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
 import net.corda.core.utilities.ProgressTracker;
 
+import java.util.UUID;
+
 import static net.corda.core.contracts.ContractsDSL.requireThat;
 
 public class FinanceFlow {
@@ -73,11 +75,12 @@ public class FinanceFlow {
         @Override
         public SignedTransaction call() throws FlowException {
             final Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
+            UniqueIdentifier un = null;
             //Stage 1
             progressTracker.setCurrentStep(LOAN_REQUEST);
             //Generate an unsigned transaction
             Party me = getServiceHub().getMyInfo().getLegalIdentities().get(0);
-            FinanceAndBankState financeBankState = new FinanceAndBankState(me, otherParty, companyName,amount, new UniqueIdentifier(),false);
+            FinanceAndBankState financeBankState = new FinanceAndBankState(me, otherParty, companyName,amount, new UniqueIdentifier(),false, un);
             final Command<FinanceContract.Commands.InitiateLoan> initiateLoanCommand = new Command<FinanceContract.Commands.InitiateLoan>(new FinanceContract.Commands.InitiateLoan(), ImmutableList.of(financeBankState.getBank().getOwningKey(), financeBankState.getfinance().getOwningKey()));
             final TransactionBuilder txBuilder = new TransactionBuilder(notary)
                     .addOutputState(financeBankState, FinanceContract.TEMPLATE_CONTRACT_ID)

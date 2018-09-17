@@ -27,14 +27,13 @@ public class CreditAgencyBankNotificationFlow {
         private final Party otherParty;
         private  String companyName;
         private boolean loanEligibleFlag;
-        private final int amount;
+       // private int amount;
         UniqueIdentifier linearId = null;
         UniqueIdentifier linearIdFinanceState = null;
         UniqueIdentifier linearIdBankState = null;
         String id = null;
 
-        public Initiator(int amount, Party otherParty,String companyName,UniqueIdentifier linearIdFinanceState,UniqueIdentifier linearIdBankState) {
-            this.amount = amount;
+        public Initiator(Party otherParty,String companyName,UniqueIdentifier linearIdFinanceState,UniqueIdentifier linearIdBankState) {
             this.otherParty = otherParty;
             this.companyName = companyName;
             this.linearIdFinanceState = linearIdFinanceState;
@@ -84,6 +83,14 @@ public class CreditAgencyBankNotificationFlow {
 
         public boolean isLoanEligibleFlag() {
             return loanEligibleFlag;
+        }
+
+        public UniqueIdentifier getLinearIdBankState() {
+            return linearIdBankState;
+        }
+
+        public void setLinearIdBankState(UniqueIdentifier linearIdBankState) {
+            this.linearIdBankState = linearIdBankState;
         }
 
         @Suspendable
@@ -176,7 +183,7 @@ public class CreditAgencyBankNotificationFlow {
             Party me = getServiceHub().getMyInfo().getLegalIdentities().get(0);
             final StateAndRef<BankAndCreditState> stateAsInput =  inputStateList.get(0);
             //stateAsInput.getState().getData().getLinearId().copy(id,stateAsInput.getState().getData().getLinearId().getId());
-            BankAndCreditState bankAndCreditStates = new BankAndCreditState(me,otherParty,true, companyName,amount,linearId);
+            BankAndCreditState bankAndCreditStates = new BankAndCreditState(me,otherParty,true, companyName,linearId);
             final Command<FinanceContract.Commands.receiveCreditApproval> receiveCreditApproval = new Command<FinanceContract.Commands.receiveCreditApproval>(new FinanceContract.Commands.receiveCreditApproval(),ImmutableList.of(bankAndCreditStates.getCreditRatingAgency().getOwningKey(),bankAndCreditStates.getbank().getOwningKey()));
             final TransactionBuilder txBuilder = new TransactionBuilder(notary)
                     .addInputState(inputState)

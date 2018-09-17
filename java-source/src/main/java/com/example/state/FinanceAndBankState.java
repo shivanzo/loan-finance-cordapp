@@ -22,13 +22,14 @@ public class FinanceAndBankState implements LinearState,Serializable {
     private final UniqueIdentifier linearId;
 
     @ConstructorForDeserialization
-    public FinanceAndBankState(Party finance, Party bank, String companyName, int amount, UniqueIdentifier linearId, boolean loanEligibleFlag) {
+    public FinanceAndBankState(Party finance, Party bank, String companyName, int amount, UniqueIdentifier linearId, boolean loanEligibleFlag,UniqueIdentifier linearIdBankAndCreditState) {
         this.finance = finance;
         this.bank = bank;
         this.companyName = companyName;
         this.amount = amount;
         this.linearId = linearId;
         this.loanEligibleFlag = loanEligibleFlag;
+        this.linearIdBankAndCreditState = linearIdBankAndCreditState;
     }
 
     public Party getfinance() {
@@ -71,6 +72,11 @@ public class FinanceAndBankState implements LinearState,Serializable {
 
     public UniqueIdentifier getLinearIdBankAndCreditState() {
         return linearIdBankAndCreditState;
+    }
+
+
+    public void setLinearIdBankAndCreditState(UniqueIdentifier linearIdBankAndCreditState) {
+        this.linearIdBankAndCreditState = linearIdBankAndCreditState;
     }
 
     @Override
