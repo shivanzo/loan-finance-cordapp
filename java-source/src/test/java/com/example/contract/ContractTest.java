@@ -1,4 +1,4 @@
-/*
+/
 package com.example.contract;
 
 import com.google.common.collect.ImmutableList;
@@ -8,7 +8,7 @@ import net.corda.testing.core.TestIdentity;
 import net.corda.testing.node.MockServices;
 import org.junit.Test;
 
-import static com.example.contract.IOUContract.IOU_CONTRACT_ID;
+import static com.example.contract.FinanceContract.TEMPLATE_CONTRACT_ID;
 import static net.corda.testing.node.NodeTestUtils.ledger;
 
 public class IOUContractTests {
@@ -116,4 +116,4 @@ public class IOUContractTests {
             return null;
         }));
     }
-}*/
+}
