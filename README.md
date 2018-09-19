@@ -1,5 +1,4 @@
-# Author : Shivan Sawant
-# Company : Persistent Systems
+
 # email : shivansawant1992@gmail.com
 
 # LOAN APPLICATION POC
@@ -26,8 +25,7 @@ Problem Statement
 
 (Credit Agency to Bank)
 
-* http://localhost:10012/api/loanApp/ackwd-finance?company=Persistent&value=10000&partyName=O=PartyA,L=London,C=GB&linearid=2e62f0a6-646d-4be7-980e-1ea057979896
-
+* http://localhost:10012/api/loanApp/ackwd-finance?company=Persistent&value=10000&partyName=O=PartyA,L=London,C=GB&linearid=(linear id of fina
 (Bank to Finance)
 
 * 10009 : PARTY A Port (Finance Agency)
