@@ -36,7 +36,7 @@ import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
 import static javax.ws.rs.core.Response.Status.CREATED;
 import static javax.ws.rs.core.Response.Status.OK;
 
-@Path("loanApi")
+@Path("loans")
 public class LoanFinanceApi {
     private final CordaRPCOps rpcOps;
     private final CordaX500Name myLegalName;
@@ -61,7 +61,7 @@ public class LoanFinanceApi {
 
     /* by Shivan Sawant */
     @GET
-    @Path("initiateLoan-query")
+    @Path("finance")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getFinacneBankQuery() {
         System.out.println("Shivan Sawant : "+rpcOps.vaultQuery(FinanceAndBankState.class).getStates() );
@@ -69,7 +69,7 @@ public class LoanFinanceApi {
     }
 
     @GET
-    @Path("sendApprove-query")
+    @Path("bank")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getBankAndCreditQuery() {
         System.out.println("Shivan Sawant : "+rpcOps.vaultQuery(BankAndCreditState.class).getStates() );
@@ -77,26 +77,26 @@ public class LoanFinanceApi {
     }
 
     @GET
-    @Path("creditresponse-query")
+    @Path("credit")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getCreditBankQuery() {
         System.out.println("Shivan Sawant : "+rpcOps.vaultQuery(BankAndCreditState.class).getStates() );
         return Response.status(200).entity(rpcOps.vaultQuery(BankAndCreditState.class).getStates()).build();
     }
 
-    @GET
+    /*@GET
     @Path("loanresponse-query")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getBankFinanceQuery() {
 
         System.out.println("Shivan Sawant : "+rpcOps.vaultQuery(FinanceAndBankState.class).getStates() );
         return Response.status(200).entity(rpcOps.vaultQuery(FinanceAndBankState.class).getStates()).build();
-    }
+    }*/
 
     /* by Shivan Sawant */
     /*******start of put request for query param. Shivan Sawant.***/
     @POST
-    @Path("create-loan")
+    @Path("loanapplications")
     public Response loanRequest(@QueryParam("company") String company, @QueryParam("value") int value ,@QueryParam("partyName") CordaX500Name bankNode) throws InterruptedException, ExecutionException {
         System.out.println("Amount : "+value);
 
@@ -140,7 +140,7 @@ public class LoanFinanceApi {
 
     /* by Shivan Sawant */
     @PUT
-    @Path("send-loanEligibilityCheck")
+    @Path("bankapplications")
     public Response loanEligibilityCheck(@QueryParam("company") String company ,@QueryParam("partyName") CordaX500Name creditAgencyNode,@QueryParam("linearId") String financeBankStateLinearId) throws InterruptedException, ExecutionException {
 
         if (creditAgencyNode == null) {
@@ -190,7 +190,7 @@ public class LoanFinanceApi {
      *
      */
     @PUT
-    @Path("credit-response")
+    @Path("creditresponses")
     public Response creditAgencyResponse(@QueryParam("company") String company,@QueryParam("partyName") CordaX500Name partyName, @QueryParam("financeLinearid") String financeBankStateLinearId, @QueryParam("bankLinearid") String bankCreditStateLinearId) throws InterruptedException, ExecutionException {
 
         System.out.println("partyName : "+partyName);
@@ -250,7 +250,7 @@ public class LoanFinanceApi {
     }
 
     @PUT
-    @Path("ackwd-finance")
+    @Path("financeacknowledgments")
     public Response bankLoanConfirmation(@QueryParam("company") String company, @QueryParam("value")int value ,@QueryParam("partyName") CordaX500Name partyName,@QueryParam("linearid") String financeBankStateLinearId, @QueryParam("linearIdBank") String bankAndCreditStateLinearId) throws InterruptedException, ExecutionException {
         System.out.println("partyName : "+partyName);
 
@@ -283,7 +283,6 @@ public class LoanFinanceApi {
         UniqueIdentifier linearIdBankState = new UniqueIdentifier();
         UniqueIdentifier uuidFinanceState = linearIdFinanceState.copy(null,UUID.fromString(financeBankStateLinearId));
         UniqueIdentifier uuidBankState = linearIdBankState.copy(null,UUID.fromString(bankAndCreditStateLinearId));
-
 
         try {
             BankAndFinanceFlow.Initiator initiator = new BankAndFinanceFlow.Initiator(value,otherParty,company,uuidFinanceState,uuidBankState);
@@ -334,7 +333,7 @@ public class LoanFinanceApi {
      * Displays all IOU states that are created by Party.
      */
     @GET
-    @Path("my-ious")
+    @Path("my-states")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getMyIOUs() throws NoSuchFieldException {
         QueryCriteria generalCriteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.ALL);

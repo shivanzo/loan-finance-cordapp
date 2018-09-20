@@ -83,7 +83,7 @@ public class FinanceFlow {
             FinanceAndBankState financeBankState = new FinanceAndBankState(me, otherParty, companyName,amount, new UniqueIdentifier(),false, un);
             final Command<FinanceContract.Commands.InitiateLoan> initiateLoanCommand = new Command<FinanceContract.Commands.InitiateLoan>(new FinanceContract.Commands.InitiateLoan(), ImmutableList.of(financeBankState.getBank().getOwningKey(), financeBankState.getfinance().getOwningKey()));
             final TransactionBuilder txBuilder = new TransactionBuilder(notary)
-                    .addOutputState(financeBankState, FinanceContract.TEMPLATE_CONTRACT_ID)
+                    .addOutputState(financeBankState, FinanceContract.FINANCE_CONTRACT_ID)
                     .addCommand(initiateLoanCommand);
             progressTracker.setCurrentStep(VERIFYING_TRANSACTION);
             txBuilder.verify(getServiceHub());

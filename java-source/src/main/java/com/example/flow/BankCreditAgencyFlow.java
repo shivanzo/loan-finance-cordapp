@@ -28,7 +28,6 @@ public class BankCreditAgencyFlow {
     public static class Initiator extends FlowLogic<SignedTransaction> {
         private final Party otherParty;
         private String companyName;
-       // private int amount;
         private boolean loanEligibleFlag;
         private UniqueIdentifier linearId;
         private UniqueIdentifier linearIdRequestForLoan;
@@ -92,7 +91,7 @@ public class BankCreditAgencyFlow {
             Party me = getServiceHub().getMyInfo().getLegalIdentities().get(0);
 
             /******Validation of linear id *****/
-                QueryCriteria criteria = new QueryCriteria.LinearStateQueryCriteria(
+               QueryCriteria criteria = new QueryCriteria.LinearStateQueryCriteria(
                         null,
                         ImmutableList.of(linearIdRequestForLoan),
                         Vault.StateStatus.UNCONSUMED,
@@ -106,12 +105,9 @@ public class BankCreditAgencyFlow {
 
             /*******Validation of linear id END *****/
             BankAndCreditState bankAndCreditState = new BankAndCreditState(me,otherParty, loanEligibleFlag, companyName,new UniqueIdentifier());
-            PublicKey bankKey = getServiceHub().getMyInfo().getLegalIdentities().get(0).getOwningKey();
-            PublicKey creditAgencyKey = otherParty.getOwningKey();
-            System.out.println("linearIdRequestForLoan : "+linearIdRequestForLoan);
-            final Command<FinanceContract.Commands.SendForApproval> sendLoanApprovalCommand = new Command<FinanceContract.Commands.SendForApproval>(new FinanceContract.Commands.SendForApproval(),ImmutableList.of(bankKey,creditAgencyKey));
+            final Command<FinanceContract.Commands.SendForApproval> sendLoanApprovalCommand = new Command<FinanceContract.Commands.SendForApproval>(new FinanceContract.Commands.SendForApproval(),ImmutableList.of(bankAndCreditState.getbank().getOwningKey(),bankAndCreditState.getCreditRatingAgency().getOwningKey()));
             final TransactionBuilder txBuilder = new TransactionBuilder(notary)
-                    .addOutputState(bankAndCreditState,FinanceContract.TEMPLATE_CONTRACT_ID)
+                    .addOutputState(bankAndCreditState,FinanceContract.FINANCE_CONTRACT_ID)
                     .addCommand(sendLoanApprovalCommand);
 
             //step 2

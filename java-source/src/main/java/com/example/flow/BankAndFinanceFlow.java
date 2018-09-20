@@ -94,27 +94,6 @@ public class BankAndFinanceFlow {
         @Suspendable
         @Override
         public SignedTransaction call() throws FlowException {
-           /* int i=0;
-            QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
-            Vault.Page<FinanceAndBankState> results  = getServiceHub().getVaultService().queryBy(FinanceAndBankState.class,criteria);
-            List<StateAndRef<FinanceAndBankState>> inputStateList = results.getStates();
-
-            if((inputStateList == null) || (inputStateList.isEmpty()) || (inputStateList.size() < 1) ) {
-                throw new IllegalArgumentException("State Cannot be found : "+inputStateList.size());
-            }
-
-            StateAndRef<FinanceAndBankState> inputState = null;
-
-            while( i <inputStateList.size()) {
-                StateAndRef<FinanceAndBankState> stateAsInput = inputStateList.get(i);
-                if(stateAsInput.getState().getData().getLinearId().equals(linearIdFinance)){
-                    linearIdFinance = stateAsInput.getState().getData().getLinearId();
-                    inputState = inputStateList.get(i);
-                    i=inputStateList.size();
-                    break;
-                }
-                i++;
-            }*/
 
             StateAndRef<FinanceAndBankState> inputState = null;
             QueryCriteria criteria = new QueryCriteria.LinearStateQueryCriteria(
@@ -128,23 +107,17 @@ public class BankAndFinanceFlow {
             if (financeStateListResults.size() == 0 && financeStateListResults.isEmpty()) {
                 throw new FlowException("Linearid with id %s not found."+ linearIdFinance);
             }
-            else
-            {
+            else {
                 linearId = linearIdFinance;
                 inputState = financeStateListResults.get(0);
             }
 
-            /***** linear id of financeState Checking if it exist *****/
-
-            /*****END. linear id of financeState Checking if it exist *****/
             final Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
             progressTracker.setCurrentStep(BANK_RESPONSE);
             //Generate an unsigned transaction
             Party me = getServiceHub().getMyInfo().getLegalIdentities().get(0);
-           // final StateAndRef<FinanceAndBankState> stateAsInput =  inputStateList.get(0);
-           // linearId = stateAsInput.getState().getData().getLinearId().copy(id,stateAsInput.getState().getData().getLinearId().getId());
             linearId = linearIdFinance;
-            List<String> blacklisted = Arrays.asList("Syntel","Mindtree","IBM","TechMahindra","TCS","J.P. Morgon","Bank of America");
+            List<String> blacklisted = Arrays.asList("jetsAirways","Kong airways","Hypermarket");
             boolean contains = blacklisted.contains(companyName);
             FinanceAndBankState financeAndBankState = null;
             if(contains) {
@@ -159,10 +132,10 @@ public class BankAndFinanceFlow {
                 financeAndBankState.setLinearIdBankAndCreditState(linearIdBankAndCreditState);
             }
 
-            final Command<FinanceContract.Commands.InitiateLoan> initiateLoanCommand = new Command<FinanceContract.Commands.InitiateLoan>(new FinanceContract.Commands.InitiateLoan(), ImmutableList.of(financeAndBankState.getBank().getOwningKey(), financeAndBankState.getfinance().getOwningKey()));
+            final Command<FinanceContract.Commands.loanNotification> initiateLoanCommand = new Command<FinanceContract.Commands.loanNotification>(new FinanceContract.Commands.loanNotification(), ImmutableList.of(financeAndBankState.getBank().getOwningKey(), financeAndBankState.getfinance().getOwningKey()));
             final TransactionBuilder txBuilder = new TransactionBuilder(notary)
                     .addInputState(inputState)
-                    .addOutputState(financeAndBankState, FinanceContract.TEMPLATE_CONTRACT_ID).addCommand(initiateLoanCommand);
+                    .addOutputState(financeAndBankState, FinanceContract.FINANCE_CONTRACT_ID).addCommand(initiateLoanCommand);
 
             //step 2
             progressTracker.setCurrentStep(VERIFYING_TRANSACTION);

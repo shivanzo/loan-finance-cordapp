@@ -15,7 +15,8 @@ import java.util.Arrays;
 import java.util.List;
 
 public class FinanceContract implements Contract {
-    public static final String TEMPLATE_CONTRACT_ID = "com.example.contract.FinanceContract";
+    //public static final String TEMPLATE_CONTRACT_ID = "com.example.contract.FinanceContract";
+    public static final String FINANCE_CONTRACT_ID = "com.example.contract.FinanceContract";
 
     @Override
     public void verify(LedgerTransaction tx) throws IllegalArgumentException {
@@ -27,77 +28,62 @@ public class FinanceContract implements Contract {
         CommandData commandType = command.getValue();
 
         if(commandType instanceof Commands.InitiateLoan) {
-            try {
                if (tx.getInputStates().size() != 0)
-                   throw new IllegalArgumentException("InitiateLoan should not have inputs");
+                   throw new IllegalArgumentException("InitiateLoan should not have inputs : "+tx.getInputStates().size() +"getInput : "+tx.getInputStates().toString());
                if (tx.getOutputStates().size() != 1)
-                   throw new IllegalArgumentException("InitiateLoan should have one output");
+                   throw new IllegalArgumentException("InitiateLoan should have one output : "+tx.getOutputStates().size());
 
                ContractState outputState = tx.getOutput(0);
                if (!(outputState instanceof FinanceAndBankState))
                    throw new IllegalArgumentException("Ouput must be a FinanceAndBankState");
 
                FinanceAndBankState financAndBankState = (FinanceAndBankState) outputState;
-               if (financAndBankState.getAmount() > 1000 && financAndBankState.getAmount() < 100000000)
-                   throw new IllegalArgumentException("Loan amount is out of the range");
+               if ( (financAndBankState.getAmount() < 1000) && (financAndBankState.getAmount() > 100000000))
+                   throw new IllegalArgumentException("Why : Loan amount is out of the range : "+financAndBankState.getAmount());
 
                if (financAndBankState.getCompanyName().equalsIgnoreCase("PNB Bank"))
                    throw new IllegalArgumentException("Loan is not provided to the defaulters");
 
-               Party FinanceAgency = financAndBankState.getfinance();
-               PublicKey financeAgencyKey = FinanceAgency.getOwningKey();
+               Party financeAgency = financAndBankState.getfinance();
+               PublicKey financeAgencyKey = financeAgency.getOwningKey();
+               PublicKey bankKey = financAndBankState.getBank().getOwningKey();
 
                if (!(requiredSigners.contains(financeAgencyKey)))
                    throw new IllegalArgumentException("Finance agency should sign the transaction");
-
-            }
-           catch (Exception e) {
-               e.printStackTrace();
-               System.out.println("Exception "+e);
-           }
-
+            if (!(requiredSigners.contains(bankKey)))
+                throw new IllegalArgumentException("Finance agency should sign the transaction");
         }
         else if(commandType instanceof Commands.SendForApproval) {
-           try {
                if(tx.getInputStates().size() !=0)
                    throw new IllegalArgumentException("Must have atleast Zero input state");
 
                if(tx.getOutputStates().size() !=1)
                    throw new IllegalArgumentException("Must have one output state");
 
-               ContractState input = tx.getInput(0);
                ContractState output = tx.getOutput(0);
-
-               if(!(input instanceof BankAndCreditState))
-                   throw new IllegalArgumentException("Input must be of FinanceAndBank State");
 
                if(!(output instanceof BankAndCreditState))
                    throw new IllegalArgumentException("Output must of BankAndCredit State");
 
-               List<String> blacklisted = Arrays.asList("Syntel","Mindtree","IBM","TechMahindra","TCS","J.P. Morgon","Bank of America");
+               List<String> blacklisted = Arrays.asList("jetsAirways","Kong airways","Hypermarket");
                boolean contains = blacklisted.contains(FinanceAndBankState.class);
 
                if(contains) {
                    throw new IllegalArgumentException("Loan is not provided to defaulters");
                }
 
-               BankAndCreditState inputState = (BankAndCreditState)input;
                BankAndCreditState outputState = (BankAndCreditState)output;
-               Party inputBank = inputState.getbank();
-               Party outputCreditAgency = outputState.getCreditRatingAgency();
+               PublicKey BankKey = outputState.getbank().getOwningKey();
+               PublicKey creditAgencyKey = outputState.getCreditRatingAgency().getOwningKey();
 
-               if(requiredSigners.contains(inputBank.getOwningKey()))
-                   throw new IllegalArgumentException("Bank must sign before sending");
-               if(requiredSigners.contains(outputCreditAgency.getOwningKey()))
-                   throw new IllegalArgumentException("CreditRating agency must sign");
-               }
-               catch (Exception e) {
-                   e.printStackTrace();
-                   System.out.println("Exception : "+e);
-               }
+               if(!(requiredSigners.contains(BankKey)))
+                   throw new IllegalArgumentException("Bank should sign...!! Bank signature is mandatory");
+
+               if(!(requiredSigners.contains(creditAgencyKey)))
+                   throw new IllegalArgumentException("Credit Agency should sign ...!! Credit agency signature is mandatory");
+
         }
-        else if (commandType instanceof Commands.receiveCreditApproval)
-        {
+        else if (commandType instanceof Commands.receiveCreditApproval) {
             if(tx.getInputStates().size() !=1)
                 throw new IllegalArgumentException("Must have atleast one input state");
 

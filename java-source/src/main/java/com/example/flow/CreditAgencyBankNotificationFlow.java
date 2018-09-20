@@ -27,18 +27,15 @@ public class CreditAgencyBankNotificationFlow {
         private final Party otherParty;
         private  String companyName;
         private boolean loanEligibleFlag;
-       // private int amount;
         UniqueIdentifier linearId = null;
         UniqueIdentifier linearIdFinanceState = null;
         UniqueIdentifier linearIdBankState = null;
-        String id = null;
 
         public Initiator(Party otherParty,String companyName,UniqueIdentifier linearIdFinanceState,UniqueIdentifier linearIdBankState) {
             this.otherParty = otherParty;
             this.companyName = companyName;
             this.linearIdFinanceState = linearIdFinanceState;
             this.linearIdBankState = linearIdBankState;
-            System.out.println("linearIdFinanceState : "+linearIdFinanceState + " "+ "linearIdBankState : "+linearIdBankState);
         }
 
         private final ProgressTracker.Step VERIFYING_TRANSACTION = new ProgressTracker.Step("Verifying contract constraints.");
@@ -97,7 +94,6 @@ public class CreditAgencyBankNotificationFlow {
         @Override
         public SignedTransaction call() throws FlowException {
 
-
             QueryCriteria criteriaBankState = new QueryCriteria.LinearStateQueryCriteria(
                     null,
                     ImmutableList.of(linearIdBankState),
@@ -118,56 +114,7 @@ public class CreditAgencyBankNotificationFlow {
                 throw new IllegalArgumentException("Linear id is not valid : "+linearIdBankState);
             }
 
-
-            /*QueryCriteria criteria = new QueryCriteria.LinearStateQueryCriteria(
-                    null,
-                    ImmutableList.of(linearIdFinanceState),
-                    Vault.StateStatus.UNCONSUMED,
-                    null);
-
-            List<UniqueIdentifier> financeStateListValidationResult = new ArrayList<UniqueIdentifier>();
-            List<StateAndRef<FinanceAndBankState>> financeStateListResults = getServiceHub().getVaultService().queryBy(FinanceAndBankState.class,criteria).getStates();
-            if (financeStateListResults.size() <1 || financeStateListResults.isEmpty()) {
-                throw new IllegalArgumentException("Linearid with id %s not found."+ linearIdFinanceState + "size : "+financeStateListResults.size());
-            }*/
-
-       /*     QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
-            Vault.Page<FinanceAndBankState> results  = getServiceHub().getVaultService().queryBy(FinanceAndBankState.class,criteria);
-           // List<StateAndRef<FinanceAndBankState>> financeStateListResults = getServiceHub().getVaultService().queryBy(FinanceAndBankState.class,criteria).getStates();
-            List<StateAndRef<FinanceAndBankState>> financeStateListResults = results.getStates();
-
-            if(financeStateListResults.size() > 0) {
-                throw new IllegalArgumentException("Holia");
-            }
-            if(financeStateListResults.size() < 1) {
-                throw new IllegalArgumentException("Size of financeStateListResults : " + financeStateListResults.size() + "com/example/flow/FinanceFlow.java contents : " + financeStateListResults.toString());
-            }*/
-
-            /* System.out.println("size of list financeStateListResults : "+financeStateListResults.size());
-            if (financeStateListResults.size() < 1 && financeStateListResults.isEmpty()) {
-                throw new FlowException("Linearid with id %s not found."+ linearIdFinanceState+ "size : "+financeStateListResults.size());
-            }
-
-            for(StateAndRef<FinanceAndBankState> stateAsInput : financeStateListResults) {
-                if(stateAsInput.getState().getData().getLinearId().equals(linearIdFinanceState)){
-                    financeStateListValidationResult.add(linearIdFinanceState);
-                }
-                else {
-                    financeStateListValidationResult.clear();
-                }
-            }
-
-            if(financeStateListValidationResult.size() != 1 && financeStateListValidationResult.size() == 0) {
-                throw new IllegalArgumentException("Entered linear id / Loan id is not found : "+financeStateListValidationResult.size());
-            }
-
-*/
-
-
-
-
-            /******* END .Validating the linear id fetched from API parameter (Passed by the user)******/
-            List<String> blacklisted = Arrays.asList("Syntel","Mindtree","IBM","TechMahindra","TCS","J.P. Morgon","Bank of America");
+            List<String> blacklisted = Arrays.asList("jetsAirways","Kong airways","Hypermarket");
             boolean contains = blacklisted.contains(companyName);
             BankAndCreditState bankAndCreditState = new BankAndCreditState(linearId);
             if(contains) {
@@ -181,13 +128,11 @@ public class CreditAgencyBankNotificationFlow {
             final Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
             progressTracker.setCurrentStep(LOAN_ELIGIBILITY_RESPONSE);
             Party me = getServiceHub().getMyInfo().getLegalIdentities().get(0);
-            final StateAndRef<BankAndCreditState> stateAsInput =  inputStateList.get(0);
-            //stateAsInput.getState().getData().getLinearId().copy(id,stateAsInput.getState().getData().getLinearId().getId());
             BankAndCreditState bankAndCreditStates = new BankAndCreditState(me,otherParty,true, companyName,linearId);
             final Command<FinanceContract.Commands.receiveCreditApproval> receiveCreditApproval = new Command<FinanceContract.Commands.receiveCreditApproval>(new FinanceContract.Commands.receiveCreditApproval(),ImmutableList.of(bankAndCreditStates.getCreditRatingAgency().getOwningKey(),bankAndCreditStates.getbank().getOwningKey()));
             final TransactionBuilder txBuilder = new TransactionBuilder(notary)
                     .addInputState(inputState)
-                    .addOutputState(bankAndCreditStates,FinanceContract.TEMPLATE_CONTRACT_ID)
+                    .addOutputState(bankAndCreditStates,FinanceContract.FINANCE_CONTRACT_ID)
                     .addCommand(receiveCreditApproval);
             //step 2
             progressTracker.setCurrentStep(VERIFYING_TRANSACTION);
