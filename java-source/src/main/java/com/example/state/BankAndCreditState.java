@@ -17,7 +17,6 @@ public class BankAndCreditState implements LinearState,Serializable {
     private Party creditRatingAgency;
     private boolean loanEligibleFlag;
     private String companyName;
-    //private int amount;
     private final UniqueIdentifier linearId;
 
     @ConstructorForDeserialization
@@ -26,7 +25,6 @@ public class BankAndCreditState implements LinearState,Serializable {
         this.creditRatingAgency = creditRatingAgency;
         this.loanEligibleFlag = loanEligibleFlag;
         this.companyName = companyName;
-       // this.amount = amount;
         this.linearId = linearId;
     }
 
@@ -58,12 +56,6 @@ public class BankAndCreditState implements LinearState,Serializable {
         return companyName;
     }
 
-    /*public int getAmount()
-    {
-        return amount;
-    }*/
-
-
     public boolean isLoanEligibleFlag() {
         return loanEligibleFlag;
     }
@@ -75,10 +67,6 @@ public class BankAndCreditState implements LinearState,Serializable {
     public void setCompanyName(String companyName) {
         this.companyName = companyName;
     }
-
-    /*public void setAmount(int amount) {
-        this.amount = amount;
-    }*/
 
     @Override
     public UniqueIdentifier getLinearId()

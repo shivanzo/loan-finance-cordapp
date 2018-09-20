@@ -3,7 +3,6 @@ package com.example.flow;
 
 import co.paralleluniverse.fibers.Suspendable;
 import com.example.contract.FinanceContract;
-import com.example.state.BankAndCreditState;
 import com.example.state.FinanceAndBankState;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -132,10 +131,10 @@ public class BankAndFinanceFlow {
                 financeAndBankState.setLinearIdBankAndCreditState(linearIdBankAndCreditState);
             }
 
-            final Command<FinanceContract.Commands.loanNotification> initiateLoanCommand = new Command<FinanceContract.Commands.loanNotification>(new FinanceContract.Commands.loanNotification(), ImmutableList.of(financeAndBankState.getBank().getOwningKey(), financeAndBankState.getfinance().getOwningKey()));
+            final Command<FinanceContract.Commands.loanNotification> loanNotificationCommand = new Command<FinanceContract.Commands.loanNotification>(new FinanceContract.Commands.loanNotification(), ImmutableList.of(financeAndBankState.getBank().getOwningKey(), financeAndBankState.getfinance().getOwningKey()));
             final TransactionBuilder txBuilder = new TransactionBuilder(notary)
                     .addInputState(inputState)
-                    .addOutputState(financeAndBankState, FinanceContract.FINANCE_CONTRACT_ID).addCommand(initiateLoanCommand);
+                    .addOutputState(financeAndBankState, FinanceContract.FINANCE_CONTRACT_ID).addCommand(loanNotificationCommand);
 
             //step 2
             progressTracker.setCurrentStep(VERIFYING_TRANSACTION);

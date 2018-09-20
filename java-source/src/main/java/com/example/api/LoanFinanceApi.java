@@ -1,11 +1,9 @@
-/**** @author : Shivan Sawant  *****/
 package com.example.api;
 
 import com.example.flow.BankAndFinanceFlow;
 import com.example.flow.BankCreditAgencyFlow;
 import com.example.flow.CreditAgencyBankNotificationFlow;
 import com.example.flow.FinanceFlow;
-import com.example.schema.IOUSchemaV1;
 import com.example.state.BankAndCreditState;
 import com.example.state.FinanceAndBankState;
 import com.google.common.collect.ImmutableList;
@@ -16,16 +14,14 @@ import net.corda.core.identity.CordaX500Name;
 import net.corda.core.identity.Party;
 import net.corda.core.messaging.CordaRPCOps;
 import net.corda.core.node.NodeInfo;
-import net.corda.core.node.services.Vault;
-import net.corda.core.node.services.vault.*;
 import net.corda.core.transactions.SignedTransaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.example.bean.DataBean;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -34,10 +30,10 @@ import java.util.concurrent.ExecutionException;
 import static java.util.stream.Collectors.toList;
 import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
 import static javax.ws.rs.core.Response.Status.CREATED;
-import static javax.ws.rs.core.Response.Status.OK;
 
 @Path("loans")
 public class LoanFinanceApi {
+
     private final CordaRPCOps rpcOps;
     private final CordaX500Name myLegalName;
     private final List<String> serviceNames = ImmutableList.of("Notary");
@@ -64,7 +60,7 @@ public class LoanFinanceApi {
     @Path("finance")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getFinacneBankQuery() {
-        System.out.println("Shivan Sawant : "+rpcOps.vaultQuery(FinanceAndBankState.class).getStates() );
+        System.out.println("VaultQuery : "+rpcOps.vaultQuery(FinanceAndBankState.class).getStates() );
        return Response.status(200).entity(rpcOps.vaultQuery(FinanceAndBankState.class).getStates()).build();
     }
 
@@ -72,7 +68,7 @@ public class LoanFinanceApi {
     @Path("bank")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getBankAndCreditQuery() {
-        System.out.println("Shivan Sawant : "+rpcOps.vaultQuery(BankAndCreditState.class).getStates() );
+        System.out.println("VaultQuery : "+rpcOps.vaultQuery(BankAndCreditState.class).getStates() );
         return Response.status(200).entity(rpcOps.vaultQuery(BankAndCreditState.class).getStates()).build();
     }
 
@@ -80,45 +76,37 @@ public class LoanFinanceApi {
     @Path("credit")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getCreditBankQuery() {
-        System.out.println("Shivan Sawant : "+rpcOps.vaultQuery(BankAndCreditState.class).getStates() );
+        System.out.println("VaultQuery : "+rpcOps.vaultQuery(BankAndCreditState.class).getStates() );
         return Response.status(200).entity(rpcOps.vaultQuery(BankAndCreditState.class).getStates()).build();
     }
 
-    /*@GET
-    @Path("loanresponse-query")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response getBankFinanceQuery() {
-
-        System.out.println("Shivan Sawant : "+rpcOps.vaultQuery(FinanceAndBankState.class).getStates() );
-        return Response.status(200).entity(rpcOps.vaultQuery(FinanceAndBankState.class).getStates()).build();
-    }*/
-
-    /* by Shivan Sawant */
     /*******start of put request for query param. Shivan Sawant.***/
     @POST
     @Path("loanapplications")
-    public Response loanRequest(@QueryParam("company") String company, @QueryParam("value") int value ,@QueryParam("partyName") CordaX500Name bankNode) throws InterruptedException, ExecutionException {
-        System.out.println("Amount : "+value);
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response loanRequest(DataBean detail) throws InterruptedException, ExecutionException {
+
+        CordaX500Name bankNode=detail.getPartyName();
+        int value=detail.getValue();
+        String company=detail.getCompany();
+
+        final Party otherParty = rpcOps.wellKnownPartyFromX500Name(bankNode);
 
         if (bankNode == null) {
-            return Response.status(BAD_REQUEST).entity("Query parameter 'partyName' missing or has wrong format.\n").build();
+            return Response.status(BAD_REQUEST).entity("parameter 'partyName' missing or has wrong format.\n").build();
         }
 
-        if (value < 0) {
-            return Response.status(BAD_REQUEST).entity("Query parameter 'Amount' must be non-negative.\n").build();
+        if (value <= 0) {
+            return Response.status(BAD_REQUEST).entity(" parameter 'Amount' must be non-negative.\n").build();
         }
 
         if(company == null) {
             return Response.status(BAD_REQUEST).entity("Company name is missing. \n").build();
         }
-        System.out.println("Type 1 pass");
-        final Party otherParty = rpcOps.wellKnownPartyFromX500Name(bankNode);
-        System.out.println("Type 2 pass");
 
         if (otherParty == null) {
             return Response.status(BAD_REQUEST).entity("Party named " + bankNode + "cannot be found.\n").build();
         }
-        System.out.println("Type 3 pass");
 
         try {
             FinanceFlow.Initiator initiator = new FinanceFlow.Initiator(value,otherParty,company);
@@ -127,7 +115,6 @@ public class LoanFinanceApi {
                     .getReturnValue()
                     .get();
 
-            System.out.println("Type 4 pass");
             System.out.println("Current linear State : "+initiator.getLinearId());
             final String msg = String.format("FINANCE AGENCY OF WALES. \n Transaction id %s  is successfully committed to ledger.\n ", signedTx.getId());
             return Response.status(CREATED).entity(msg).build();
@@ -138,13 +125,18 @@ public class LoanFinanceApi {
         }
     }
 
-    /* by Shivan Sawant */
-    @PUT
+    @POST
     @Path("bankapplications")
-    public Response loanEligibilityCheck(@QueryParam("company") String company ,@QueryParam("partyName") CordaX500Name creditAgencyNode,@QueryParam("linearId") String financeBankStateLinearId) throws InterruptedException, ExecutionException {
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response loanEligibilityCheck(DataBean dataBean) throws InterruptedException, ExecutionException {
+
+        String company = dataBean.getCompany();
+        CordaX500Name creditAgencyNode = dataBean.getPartyName();
+        String financeBankStateLinearId = dataBean.getFinanceLinearId();
+        final Party otherParty = rpcOps.wellKnownPartyFromX500Name(creditAgencyNode);
 
         if (creditAgencyNode == null) {
-            return Response.status(BAD_REQUEST).entity("Query parameter 'partyName' missing or has wrong format.\n").build();
+            return Response.status(BAD_REQUEST).entity("parameter 'partyName' missing or has wrong format.\n").build();
         }
 
         if(company == null) {
@@ -155,26 +147,20 @@ public class LoanFinanceApi {
             return Response.status(BAD_REQUEST).entity("linear id of FinanceAndBank State is missing . \n").build();
         }
 
-        System.out.println("Type 1 pass");
-        final Party otherParty = rpcOps.wellKnownPartyFromX500Name(creditAgencyNode);
-        System.out.println("Type 2 pass");
         if (otherParty == null) {
             return Response.status(BAD_REQUEST).entity("Party named " + creditAgencyNode + "cannot be found.\n").build();
         }
-        System.out.println("Type 3 pass");
+
         UniqueIdentifier linearIdFinanceState = new UniqueIdentifier();
         UniqueIdentifier uuidFinanceState = linearIdFinanceState.copy(null,UUID.fromString(financeBankStateLinearId));
-        System.out.println("Actual Linear Id : "+uuidFinanceState);
 
         try {
             BankCreditAgencyFlow.Initiator initiator = new BankCreditAgencyFlow.Initiator(otherParty,company,uuidFinanceState);
-            System.out.println("Before Type 4 Passes");
             final SignedTransaction signedTx = rpcOps
                     .startTrackedFlowDynamic(BankCreditAgencyFlow.Initiator.class, otherParty,company,uuidFinanceState)
                     .getReturnValue()
                     .get();
 
-            System.out.println("Type 4 pass");
             System.out.println("linearId fetched : "+initiator.getLinearIdRequestForLoan() != null ? initiator.getLinearIdRequestForLoan() :"");
             final String msg = String.format("STANDARD CHARTERED BANK Response.\n Transaction id %s  is successfully committed to ledger. \n", signedTx.getId() +" \n" + "The Application Id (linear id) for loan is : "+initiator.getLinearIdRequestForLoan());
             return Response.status(CREATED).entity(msg).build();
@@ -189,21 +175,21 @@ public class LoanFinanceApi {
     /** code for creditAgency and Bank
      *
      */
-    @PUT
+    @POST
     @Path("creditresponses")
-    public Response creditAgencyResponse(@QueryParam("company") String company,@QueryParam("partyName") CordaX500Name partyName, @QueryParam("financeLinearid") String financeBankStateLinearId, @QueryParam("bankLinearid") String bankCreditStateLinearId) throws InterruptedException, ExecutionException {
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response creditAgencyResponse(DataBean dataBean) throws InterruptedException, ExecutionException {
 
-        System.out.println("partyName : "+partyName);
+        String company = dataBean.getCompany();
+        CordaX500Name partyName = dataBean.getPartyName();
+        String financeBankStateLinearId = dataBean.getFinanceLinearId();
+        String bankCreditStateLinearId = dataBean.getBankLinearId();
+
+        final Party otherParty = rpcOps.wellKnownPartyFromX500Name(partyName);
 
         if (partyName == null) {
-            return Response.status(BAD_REQUEST).entity("Query parameter 'partyName' missing or has wrong format.\n").build();
+            return Response.status(BAD_REQUEST).entity(" parameter 'partyName' missing or has wrong format.\n").build();
         }
-        System.out.println("Type 1 pass");
-        final Party otherParty = rpcOps.wellKnownPartyFromX500Name(partyName);
-        System.out.println("Type 2 pass");
-
-        System.out.println("Shivan Sawant : "+rpcOps.vaultQuery(FinanceAndBankState.class).getStates() );
-
 
         if (otherParty == null) {
             return Response.status(BAD_REQUEST).entity("Party named " + partyName + "cannot be found.\n").build();
@@ -221,14 +207,11 @@ public class LoanFinanceApi {
             return Response.status(BAD_REQUEST).entity("linear id of previous unconsumed state cannot be empty. \n").build();
         }
 
+        System.out.println("Vault Query Finance State : "+rpcOps.vaultQuery(FinanceAndBankState.class).getStates() );
         UniqueIdentifier linearIdFinanceState = new UniqueIdentifier();
         UniqueIdentifier linearIdBankState = new UniqueIdentifier();
         UniqueIdentifier uuidFinanceState = linearIdFinanceState.copy(null,UUID.fromString(financeBankStateLinearId));
         UniqueIdentifier uuidBankState = linearIdBankState.copy(null,UUID.fromString(bankCreditStateLinearId));
-
-        System.out.println("linearIdBankState : "+linearIdBankState);
-        System.out.println("linearIdFinanceState : "+linearIdFinanceState);
-        System.out.println("Type 3 pass");
 
         try {
             CreditAgencyBankNotificationFlow.Initiator initiator = new CreditAgencyBankNotificationFlow.Initiator(otherParty,company,uuidFinanceState,uuidBankState);
@@ -237,9 +220,7 @@ public class LoanFinanceApi {
                     .getReturnValue()
                     .get();
 
-            System.out.println("Type 4 pass");
-            System.out.println("Previous  Finance Linear Id is  : "+initiator.getLinearIdFinanceState()!=null ? initiator.getLinearIdFinanceState() :"");
-            final String msg = String.format("BANK BAZAR CREDIT RATING AGENCY Reponse.\n Transaction id %s is successfully committed to ledger. \n", signedTx.getId() + " "+ "The Loan Applicaiton id (linear id) is  : "+initiator.getLinearIdFinanceState());
+            final String msg = String.format("LONDON CREDIT RATING AGENCY Reponse.\n Transaction id %s is successfully committed to ledger. \n", signedTx.getId() + " "+ "The Loan Applicaiton id (linear id) is  : "+initiator.getLinearIdFinanceState());
             return Response.status(CREATED).entity(msg).build();
 
         } catch (Throwable ex) {
@@ -249,17 +230,24 @@ public class LoanFinanceApi {
         }
     }
 
-    @PUT
+    @POST
     @Path("financeacknowledgments")
-    public Response bankLoanConfirmation(@QueryParam("company") String company, @QueryParam("value")int value ,@QueryParam("partyName") CordaX500Name partyName,@QueryParam("linearid") String financeBankStateLinearId, @QueryParam("linearIdBank") String bankAndCreditStateLinearId) throws InterruptedException, ExecutionException {
-        System.out.println("partyName : "+partyName);
+    public Response bankLoanConfirmation(DataBean dataBean) throws InterruptedException, ExecutionException {
+
+        String company = dataBean.getCompany();
+        int value = dataBean.getValue();
+        CordaX500Name partyName = dataBean.getPartyName();
+        String financeBankStateLinearId = dataBean.getFinanceLinearId();
+        String bankAndCreditStateLinearId = dataBean.getBankLinearId();
+
+        final Party otherParty = rpcOps.wellKnownPartyFromX500Name(partyName);
 
         if (value <= 0) {
-            return Response.status(BAD_REQUEST).entity("Query parameter 'Amount' must be non-negative.\n").build();
+            return Response.status(BAD_REQUEST).entity(" parameter 'Amount' must be non-negative.\n").build();
         }
 
         if (partyName == null) {
-            return Response.status(BAD_REQUEST).entity("Query parameter 'partyName' missing or has wrong format.\n").build();
+            return Response.status(BAD_REQUEST).entity(" parameter 'partyName' missing or has wrong format.\n").build();
         }
 
         if(company == null) {
@@ -270,14 +258,13 @@ public class LoanFinanceApi {
             return Response.status(BAD_REQUEST).entity("linear id of FinanceAndBank State is missing . \n").build();
         }
 
-        System.out.println("Type 1 pass");
-        final Party otherParty = rpcOps.wellKnownPartyFromX500Name(partyName);
-        System.out.println("Type 2 pass");
+        if(bankAndCreditStateLinearId == null) {
+            return Response.status(BAD_REQUEST).entity("linear id of bank is needed for audit . \n").build();
+        }
 
         if (otherParty == null) {
             return Response.status(BAD_REQUEST).entity("Party named " + partyName + "cannot be found.\n").build();
         }
-        System.out.println("Type 3 pass");
 
         UniqueIdentifier linearIdFinanceState = new UniqueIdentifier();
         UniqueIdentifier linearIdBankState = new UniqueIdentifier();
@@ -291,7 +278,6 @@ public class LoanFinanceApi {
                     .getReturnValue()
                     .get();
 
-            System.out.println("Type 4 pass");
             System.out.println("Previous  Finance Linear Id is  : "+initiator.getLinearIdFinance());
             final String msg = String.format("Loan Application Response from STANDARD CHARTERED BANK. \n Transaction id %s is sucessfully  committed to ledger.\n", signedTx.getId() +" "+ " Application id is : "+initiator.getLinearIdFinance());
             return Response.status(CREATED).entity(msg).build();
@@ -302,7 +288,6 @@ public class LoanFinanceApi {
             return Response.status(BAD_REQUEST).entity(msg).build();
         }
     }
-
 
     /**
      * Returns all parties registered with the [NetworkMapService]. These names can be used to look up identities
@@ -326,22 +311,5 @@ public class LoanFinanceApi {
     @Produces(MediaType.APPLICATION_JSON)
     public List<StateAndRef<FinanceAndBankState>> getIOUs() {
         return rpcOps.vaultQuery(FinanceAndBankState.class).getStates();
-    }
-
-
-	/**
-     * Displays all IOU states that are created by Party.
-     */
-    @GET
-    @Path("my-states")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response getMyIOUs() throws NoSuchFieldException {
-        QueryCriteria generalCriteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.ALL);
-        Field lender = IOUSchemaV1.PersistentIOU.class.getDeclaredField("lender");
-        CriteriaExpression lenderIndex = Builder.equal(lender, myLegalName.toString());
-        QueryCriteria lenderCriteria = new QueryCriteria.VaultCustomQueryCriteria(lenderIndex);
-        QueryCriteria criteria = generalCriteria.and(lenderCriteria);
-        List<StateAndRef<FinanceAndBankState>> results = rpcOps.vaultQueryByCriteria(criteria,FinanceAndBankState.class).getStates();
-        return Response.status(OK).entity(results).build();
     }
 }

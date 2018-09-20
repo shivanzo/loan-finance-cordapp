@@ -13,6 +13,7 @@ import java.util.List;
 
 @CordaSerializable
 public class FinanceAndBankState implements LinearState,Serializable {
+
     private Party finance;
     private Party bank;
     private String companyName;

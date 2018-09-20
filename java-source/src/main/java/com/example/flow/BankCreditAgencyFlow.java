@@ -17,7 +17,6 @@ import net.corda.core.node.services.vault.QueryCriteria;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
 import net.corda.core.utilities.ProgressTracker;
-import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.List;
 import static net.corda.core.contracts.ContractsDSL.requireThat;

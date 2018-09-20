@@ -15,7 +15,6 @@ import java.util.Arrays;
 import java.util.List;
 
 public class FinanceContract implements Contract {
-    //public static final String TEMPLATE_CONTRACT_ID = "com.example.contract.FinanceContract";
     public static final String FINANCE_CONTRACT_ID = "com.example.contract.FinanceContract";
 
     @Override
@@ -99,7 +98,7 @@ public class FinanceContract implements Contract {
             if(!(output instanceof BankAndCreditState))
                 throw new IllegalArgumentException("Output must of BankAndCredit State");
 
-            List<String> blacklisted = Arrays.asList("Syntel","Mindtree","IBM","TechMahindra","TCS","J.P. Morgon","Bank of America");
+            List<String> blacklisted = Arrays.asList("jetsAirways","Kong airways","Hypermarket");
             boolean contains = blacklisted.contains(FinanceAndBankState.class);
 
             if(contains) {
@@ -135,7 +134,7 @@ public class FinanceContract implements Contract {
             FinanceAndBankState inputState = (FinanceAndBankState) input;
             FinanceAndBankState outputState = (FinanceAndBankState) output;
 
-            List<String> blacklisted = Arrays.asList("Syntel","Mindtree","IBM","TechMahindra","TCS","J.P. Morgon","Bank of America");
+            List<String> blacklisted = Arrays.asList("jetsAirways","Kong airways","Hypermarket");
             boolean contains = blacklisted.contains(FinanceAndBankState.class);
 
             if(contains) {
@@ -155,8 +154,7 @@ public class FinanceContract implements Contract {
         }
     }
 
-    public interface Commands extends CommandData
-    {
+    public interface Commands extends CommandData {
        public class InitiateLoan implements Commands {}
        public class SendForApproval implements Commands {}
        public class receiveCreditApproval implements Commands {}

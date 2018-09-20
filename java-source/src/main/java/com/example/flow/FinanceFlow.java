@@ -14,8 +14,6 @@ import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
 import net.corda.core.utilities.ProgressTracker;
 
-import java.util.UUID;
-
 import static net.corda.core.contracts.ContractsDSL.requireThat;
 
 public class FinanceFlow {

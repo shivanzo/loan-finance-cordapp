@@ -3,7 +3,6 @@ package com.example.flow;
 import co.paralleluniverse.fibers.Suspendable;
 import com.example.contract.FinanceContract;
 import com.example.state.BankAndCreditState;
-import com.example.state.FinanceAndBankState;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import net.corda.core.contracts.*;
@@ -15,7 +14,6 @@ import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
 import net.corda.core.utilities.ProgressTracker;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import static net.corda.core.contracts.ContractsDSL.requireThat;
@@ -101,7 +99,6 @@ public class CreditAgencyBankNotificationFlow {
                     null);
 
             StateAndRef<BankAndCreditState> inputState = null;
-            boolean linearIdCorrectFlag = false;
             List<StateAndRef<BankAndCreditState>> inputStateList = getServiceHub().getVaultService().queryBy(BankAndCreditState.class,criteriaBankState).getStates();
             if(inputStateList == null || inputStateList.isEmpty() || inputStateList.size() < 1 ) {
                 throw new IllegalArgumentException("State Cannot be found : "+inputStateList.size());
