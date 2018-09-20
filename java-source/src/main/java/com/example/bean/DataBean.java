@@ -54,6 +54,6 @@ public class DataBean {
 
     @Override
     public String toString() {
-        return "DetailQuestion [party re patraO=" + partyName + "]";
+        return "DetailQuestion [company=" + company + "value=" + value + "partyName=" + partyName + "financeLinearId=" + financeLinearId + "bankLinearId=" + bankLinearId +"]";
     }
 }
