@@ -6,32 +6,32 @@ This simple cordapp written purely in JAVA, shows how Finance Agencies(A third p
 2. Banks 
 3) Credit rating agency ( A third party which checks the loan eligibility of loan application/loan applicant.
 
-###### Cordapp structure
+## Cordapp structure
 *	There are total of 3 Parties + 1 Notary.
 * There are 2 Linear states 1) FinanceAndBankState 2) BankAndCreditState
 *	Party A is a Finance Agency which sends the loan application to the bank 
 *	Party B is a Bank which Lends/Approves the loan (port 10012 in my case)
 *	Party C is a Credit Rating Agency which checks the credit eligibility of the applicant/institution in the loan application. 
 
-###### Cordapp flow
+## Cordapp flow
 *	Finance Agency sends the loan application to the bank which contains individual name/company name and amount (Loan Amount).
 *	Bank will receive the application and forward it to Credit rating agency to check the eligibility of loan applicant/ loan application (Example CIBIL score of applicant).
 *	Credit rating agency will respond back to bank with the eligibility of the loan application.
 *	Bank will receive it and decide whether to lend the loan or not by acknowledging its response to the Finance agency.
 *	Use API endspoints to initiate flow using POSTMAN.
 
-###### NOTE: Communication between Bank and credit rating agency or any data exchanged between Bank and credit rating agency remains private to Finance Agency. Finance agency does not hear what Bank and Credit rating agency does.
+## NOTE: Communication between Bank and credit rating agency or any data exchanged between Bank and credit rating agency remains private to Finance Agency. Finance agency does not hear what Bank and Credit rating agency does.
 
 * 10009 : PARTY A Port (Finance Agency)
 * 10012 : PARTY B Port (Bank)
 * 10015 : PARTY C Port (Credit Rating Agency)
 
-###### Instructions for setting up
+## Instructions for setting up
 1. clone the repository
 2. open it using IntelliJ IDEA 2018.1
 3. do gradle build and run the application
 4. initiate transactions using POSTMAN through api endpoints
 
-###### This Application is accessible only through APIs (REST API) and not UI.
+## This Application is accessible only through APIs (REST API) and not UI.
 
 
