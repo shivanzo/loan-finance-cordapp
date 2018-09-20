@@ -1,10 +1,10 @@
-# LOAN-FINANCE 3-PARTY FLOW APPLICATION POC
+# LOAN-FINANCE 3-PARTY FLOW APPLICATION POC (JAVA)
 
 This simple cordapp provides the facility for untrusting parties to interact and contract with one another to reach a final state of consensus where all parties can trust in the outcome without trusting one another and without the need for expensive out of band reconciliation.
 This simple cordapp written purely in JAVA, shows how Finance Agencies(A third party which provides loan to individuals), Banks and credit rating agencies can use corda DLT for loan lending and processing of loan. This cordapp has 3 parties 
 1. Finance Agency ( A third party which provides personal loans to individual) 
 2. Banks 
-3) Credit rating agency ( A third party which checks the loan eligibility of loan application/loan applicant.
+3. Credit rating agency ( A third party which checks the loan eligibility of loan application/loan applicant.
 
 ## Cordapp structure
 *	There are total of 3 Parties + 1 Notary.
