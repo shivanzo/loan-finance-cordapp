@@ -1,36 +1,37 @@
-# email : shivansawant1992@gmail.com
+# LOAN-FINANCE 3-PARTY FLOW APPLICATION POC
 
-# LOAN APPLICATION POC
+This simple cordapp provides the facility for untrusting parties to interact and contract with one another to reach a final state of consensus where all parties can trust in the outcome without trusting one another and without the need for expensive out of band reconciliation.
+This simple cordapp written purely in JAVA, shows how Finance Agencies(A third party which provides loan to individuals), Banks and credit rating agencies can use corda DLT for loan lending and processing of loan. This cordapp has 3 parties 
+1. Finance Agency ( A third party which provides personal loans to individual) 
+2. Banks 
+3) Credit rating agency ( A third party which checks the loan eligibility of loan application/loan applicant.
 
-Problem Statement
-*	There is total of 3 Parties + 1 Notary.
-*	Party A is a Finance Agency which sends the loan application to the bank
-*	Party B is a Bank which Lends/Approves the loan
-*	Party C is a Credit Rating Agency which checks the credit score of the applicant/Institution in the loan application.
-*	Finance Agency should send the loan application to the bank which contains Individual name/company name and amount (Loan Amount).
+###### Cordapp structure
+*	There are total of 3 Parties + 1 Notary.
+* There are 2 Linear states 1) FinanceAndBankState 2) BankAndCreditState
+*	Party A is a Finance Agency which sends the loan application to the bank 
+*	Party B is a Bank which Lends/Approves the loan (port 10012 in my case)
+*	Party C is a Credit Rating Agency which checks the credit eligibility of the applicant/institution in the loan application. 
+
+###### Cordapp flow
+*	Finance Agency sends the loan application to the bank which contains individual name/company name and amount (Loan Amount).
 *	Bank will receive the application and forward it to Credit rating agency to check the eligibility of loan applicant/ loan application (Example CIBIL score of applicant).
 *	Credit rating agency will respond back to bank with the eligibility of the loan application.
 *	Bank will receive it and decide whether to lend the loan or not by acknowledging its response to the Finance agency.
-*	Write APIs using REST API to implement and initiate is flow using POSTMAN.
+*	Use API endspoints to initiate flow using POSTMAN.
 
-## NOTE: Communication between Bank and credit rating agency or any data exchanged between Bank and credit rating agency should remain private to Finance Agency. Finance agency should not hear what Bank and Credit rating agency does.
-
-
-* http://localhost:10009/api/loanApp/create-loan?company=Persistent&value=10000&partyName=O=PartyB,L=New York,C=US  (Finance to bank)
-
-* http://localhost:10012/api/loanApp/send-loanEligibilityCheck?company=Persistent&value=10000&partyName=O=PartyC,L=Paris,C=FR&linearId=2e62f0a6-646d-4be7-980e-1ea057979896          (Bank to credit Agency)
-
-* http://localhost:10015/api/loanApp/credit-response?company=Persistent&value=10000&partyName=O=PartyB,L=New York,C=US&financeLinearid=2e62f0a6-646d-4be7-980e-1ea057979896&bankLinearid=8d67023b-9487-4d44-8c09-f8d32a84bb7c
-
-(Credit Agency to Bank)
-
-* http://localhost:10012/api/loanApp/ackwd-finance?company=Persistent&value=10000&partyName=O=PartyA,L=London,C=GB&linearid=(linear id of fina
-(Bank to Finance)
+###### NOTE: Communication between Bank and credit rating agency or any data exchanged between Bank and credit rating agency remains private to Finance Agency. Finance agency does not hear what Bank and Credit rating agency does.
 
 * 10009 : PARTY A Port (Finance Agency)
 * 10012 : PARTY B Port (Bank)
 * 10015 : PARTY C Port (Credit Rating Agency)
 
-## This Application is accessible only through APIs (REST API) and not UI.
+###### Instructions for setting up
+1. clone the repository
+2. open it using IntelliJ IDEA 2018.1
+3. do gradle build and run the application
+4. initiate transactions using POSTMAN through api endpoints
+
+###### This Application is accessible only through APIs (REST API) and not UI.
 
 
