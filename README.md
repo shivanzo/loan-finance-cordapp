@@ -32,6 +32,7 @@ This simple cordapp written purely in JAVA, shows how Finance Agencies(A third p
 * latest version of JAVA 8 java 8u181 (Preferably, Corda and kotlin support latest version of java 8)
 * Intellij 2018.1
 * Postman (Chrome)
+* http://docs.corda.r3.com/sizing-and-performance.html 
 
 ## Instructions for setting up
 1. clone the repository
