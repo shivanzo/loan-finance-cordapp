@@ -26,6 +26,13 @@ This simple cordapp written purely in JAVA, shows how Finance Agencies(A third p
 * 10012 : PARTY B Port (Bank)
 * 10015 : PARTY C Port (Credit Rating Agency)
 
+## Minimum System Requirements
+* 16 GB RAM (RAM is important to avoid BSOD and laggy system)
+* Intel i5 and above processor
+* latest version of JAVA 8 java 8u181 (Preferably, Corda and kotlin support latest version of java 8)
+* Intellij 2018.1
+* Postman (Chrome)
+
 ## Instructions for setting up
 1. clone the repository
 2. open it using IntelliJ IDEA 2018.1
