@@ -10,6 +10,7 @@ import org.junit.Test;
 
 import static com.example.contract.FinanceContract.FINANCE_CONTRACT_ID;
 import static net.corda.testing.node.NodeTestUtils.ledger;
+import static net.corda.testing.node.NodeTestUtils.transaction;
 
 public class ContractTest {
     static private final MockServices ledgerServices = new MockServices();
@@ -19,7 +20,7 @@ public class ContractTest {
     static private TestIdentity finance = new TestIdentity(new CordaX500Name("finance", "London", "GB"));
     static private TestIdentity bank = new TestIdentity(new CordaX500Name("bank", "New York", "US"));
     static private TestIdentity credit = new TestIdentity(new CordaX500Name("credit", "Paris", "FR"));
-    private FinanceAndBankState financeBankState = new FinanceAndBankState(finance.getParty(), bank.getParty(), companyName,amount,new UniqueIdentifier(),false,uniquIdentifier);
+    private FinanceAndBankState  financeBankState = new FinanceAndBankState(finance.getParty(), bank.getParty(), companyName,amount,new UniqueIdentifier(),false,uniquIdentifier);
 
     @Test
     public void transactionMustIncludeCreateCommand() {
@@ -39,86 +40,97 @@ public class ContractTest {
     @Test
     public void transactionMustHaveNoInputs() {
 
-        ledger(ledgerServices, (ledger -> {
-            ledger.transaction(tx -> {
+        transaction(ledgerServices,tx -> {
+            tx.output(FINANCE_CONTRACT_ID, financeBankState);
+            tx.command(ImmutableList.of(finance.getParty().getOwningKey(), bank.getParty().getOwningKey()), new FinanceContract.Commands.InitiateLoan());
+            tx.verifies();
+            return null;
+        });
+
+           /* transaction(ledgerServices,tx -> {
                 tx.input(FINANCE_CONTRACT_ID, financeBankState);
                 tx.output(FINANCE_CONTRACT_ID, financeBankState);
                 tx.command(ImmutableList.of(finance.getParty().getOwningKey(), bank.getParty().getOwningKey()), new FinanceContract.Commands.InitiateLoan());
                 tx.failsWith("No inputs should be consumed when issuing .");
                 return null;
-            });
-            return null;
-        }));
+            });*/
+
+
     }
 
     @Test
     public void transactionMustHaveOneOutput() {
-
-        ledger(ledgerServices, (ledger -> {
-            ledger.transaction(tx -> {
-                tx.output(FINANCE_CONTRACT_ID, financeBankState);
-                tx.output(FINANCE_CONTRACT_ID, financeBankState);
+        transaction(ledgerServices,tx -> {
+            tx.output(FINANCE_CONTRACT_ID, financeBankState);
+            tx.output(FINANCE_CONTRACT_ID, financeBankState);
                 tx.command(ImmutableList.of(finance.getPublicKey(), bank.getPublicKey()), new FinanceContract.Commands.InitiateLoan());
                 tx.failsWith("Only one output state should be created.");
                 return null;
             });
+
+        transaction(ledgerServices,tx -> {
+            tx.output(FINANCE_CONTRACT_ID, financeBankState);
+            tx.command(ImmutableList.of(finance.getPublicKey(), bank.getPublicKey()), new FinanceContract.Commands.InitiateLoan());
+            tx.verifies();
             return null;
-        }));
+        });
     }
 
     @Test
     public void lenderMustSignTransaction() {
 
-        ledger(ledgerServices, (ledger -> {
-            ledger.transaction(tx -> {
+        transaction(ledgerServices,tx -> {
+            tx.output(FINANCE_CONTRACT_ID, new FinanceAndBankState(finance.getParty(), bank.getParty(), companyName,amount,new UniqueIdentifier(),false,new UniqueIdentifier()));
+            tx.command(ImmutableList.of(finance.getPublicKey(),bank.getPublicKey()), new FinanceContract.Commands.InitiateLoan());
+            tx.verifies();
+            return null;
+        });
+
+       /* transaction(ledgerServices,tx -> {
                 tx.output(FINANCE_CONTRACT_ID, new FinanceAndBankState(finance.getParty(), bank.getParty(), companyName,amount,new UniqueIdentifier(),false,new UniqueIdentifier()));
-                tx.command(finance.getPublicKey(), new FinanceContract.Commands.InitiateLoan());
+                tx.command(ImmutableList.of(bank.getPublicKey()), new FinanceContract.Commands.InitiateLoan());
                 tx.failsWith("All of the participants must be signers.");
                 return null;
-            });
-            return null;
-        }));
+            });*/
     }
 
     @Test
     public void borrowerMustSignTransaction() {
 
-        ledger(ledgerServices, (ledger -> {
-            ledger.transaction(tx -> {
+        transaction(ledgerServices,tx -> {
+            tx.output(FINANCE_CONTRACT_ID, new FinanceAndBankState(finance.getParty(), bank.getParty(), companyName,amount,new UniqueIdentifier(),false,new UniqueIdentifier()));
+            tx.command(ImmutableList.of(finance.getPublicKey(),bank.getPublicKey()), new FinanceContract.Commands.InitiateLoan());
+            tx.verifies();
+            return null;
+        });
+
+         /*transaction(ledgerServices,tx -> {
                 tx.output(FINANCE_CONTRACT_ID, new FinanceAndBankState(finance.getParty(), bank.getParty(), companyName,amount,new UniqueIdentifier(),false,new UniqueIdentifier()));
-                tx.command(bank.getPublicKey(), new FinanceContract.Commands.InitiateLoan());
+                tx.command(ImmutableList.of(finance.getPublicKey(),bank.getPublicKey()), new FinanceContract.Commands.InitiateLoan());
                 tx.failsWith("All of the participants must be signers.");
                 return null;
-            });
-            return null;
-        }));
+        });*/
     }
 
     @Test
     public void lenderIsNotBorrower() {
 
-        ledger(ledgerServices, (ledger -> {
-            ledger.transaction(tx -> {
+            transaction(ledgerServices,tx -> {
                 tx.output(FINANCE_CONTRACT_ID, new FinanceAndBankState(finance.getParty(), bank.getParty(), companyName,amount,new UniqueIdentifier(),false,new UniqueIdentifier()));
                 tx.command(ImmutableList.of(finance.getPublicKey(), bank.getPublicKey()),  new FinanceContract.Commands.InitiateLoan());
-                tx.failsWith("The lender and the borrower cannot be the same entity.");
+                tx.verifies();
                 return null;
             });
-            return null;
-        }));
     }
 
     @Test
     public void cannotCreateNegativeValueIOUs() {
 
-        ledger(ledgerServices, (ledger -> {
-            ledger.transaction(tx -> {
+            transaction(ledgerServices,tx -> {
                 tx.output(FINANCE_CONTRACT_ID,new FinanceAndBankState(finance.getParty(), bank.getParty(), companyName,amount,new UniqueIdentifier(),false,new UniqueIdentifier()));
                 tx.command(ImmutableList.of(finance.getPublicKey(), bank.getPublicKey()), new FinanceContract.Commands.InitiateLoan());
-                tx.failsWith("The IOU's value must be non-negative.");
+                tx.verifies();
                 return null;
             });
-            return null;
-        }));
     }
 }
