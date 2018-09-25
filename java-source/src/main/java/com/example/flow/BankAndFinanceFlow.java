@@ -1,4 +1,3 @@
-/******** @author : Shivan Sawant *******/
 package com.example.flow;
 
 import co.paralleluniverse.fibers.Suspendable;
