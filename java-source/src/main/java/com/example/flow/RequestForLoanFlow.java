@@ -21,7 +21,7 @@ public class RequestForLoanFlow {
     @StartableByRPC
     public static class Initiator extends FlowLogic<SignedTransaction> {
 
-        private final Party otherParty;
+        private final Party bankParty;
         private int amount;
         private String companyName;
         private UniqueIdentifier linearIdLoanReqState;
@@ -29,8 +29,8 @@ public class RequestForLoanFlow {
         /**
          * This constructor is being called from REST API
          **/
-        public Initiator(Party otherParty, int amount, String companyName) {
-            this.otherParty = otherParty;
+        public Initiator(Party bankParty, int amount, String companyName) {
+            this.bankParty = bankParty;
             this.amount = amount;
             this.companyName = companyName;
         }
@@ -91,8 +91,8 @@ public class RequestForLoanFlow {
             progressTracker.setCurrentStep(LOAN_REQUEST);
 
             //Generate an unsigned transaction
-            Party me = getServiceHub().getMyInfo().getLegalIdentities().get(0);
-            LoanRequestState financeBankState = new LoanRequestState(me, otherParty, companyName, amount, new UniqueIdentifier(), false, uniqueIdentifier);
+            Party financeParty = getServiceHub().getMyInfo().getLegalIdentities().get(0);
+            LoanRequestState financeBankState = new LoanRequestState(financeParty, bankParty, companyName, amount, new UniqueIdentifier(), false, uniqueIdentifier);
             final Command<LoanReqContract.Commands.InitiateLoan> initiateLoanCommand = new Command<LoanReqContract.Commands.InitiateLoan>(new LoanReqContract.Commands.InitiateLoan(), ImmutableList.of(financeBankState.getBankNode().getOwningKey(), financeBankState.getFinanceNode().getOwningKey()));
 
             final TransactionBuilder txBuilder = new TransactionBuilder(notary)
@@ -109,7 +109,7 @@ public class RequestForLoanFlow {
             //Stage 4
             progressTracker.setCurrentStep(GATHERING_SIGS);
             // Send the state to the counterparty, and receive it back with their signature.
-            FlowSession otherPartySession = initiateFlow(otherParty);
+            FlowSession otherPartySession = initiateFlow(bankParty);
             final SignedTransaction fullySignedTx = subFlow(new CollectSignaturesFlow(partSignedTx, ImmutableSet.of(otherPartySession), CollectSignaturesFlow.Companion.tracker()));
             //stage 5
             progressTracker.setCurrentStep(FINALISING_TRANSACTION);

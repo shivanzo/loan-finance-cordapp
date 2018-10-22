@@ -27,7 +27,7 @@ public class LoanResponseFlow {
     @InitiatingFlow
     @StartableByRPC
     public static class Initiator extends FlowLogic<SignedTransaction> {
-        private final Party otherParty;
+        private final Party financeParty;
         private String companyName;
         private int amount;
         private boolean isEligibleForLoan;
@@ -39,7 +39,7 @@ public class LoanResponseFlow {
 
         /* This Constructor is called from REST API */
         public Initiator(Party otherParty, UniqueIdentifier linearIdLoanReqDataState, UniqueIdentifier linearIdLoanDataVerState) {
-            this.otherParty = otherParty;
+            this.financeParty = otherParty;
             this.linearIdLoanReqDataState = linearIdLoanReqDataState;
             this.linearIdLoanDataVerState = linearIdLoanDataVerState;
         }
@@ -95,10 +95,10 @@ public class LoanResponseFlow {
         @Override
         public SignedTransaction call() throws FlowException {
 
-            Party me = getServiceHub().getMyInfo().getLegalIdentities().get(0);
+            Party bankParty = getServiceHub().getMyInfo().getLegalIdentities().get(0);
             StateAndRef<LoanRequestState> inputState = null;
             StateAndRef<LoanVerificationState> bankCreditStateQuery = null;
-            LoanVerificationState bankState = new LoanVerificationState(me, linearIdLoanDataVerState, linearIdLoanReqDataState);
+            LoanVerificationState bankState = new LoanVerificationState(bankParty, linearIdLoanDataVerState, linearIdLoanReqDataState);
 
             QueryCriteria criteria = new QueryCriteria.LinearStateQueryCriteria(
                     null,
@@ -145,7 +145,7 @@ public class LoanResponseFlow {
             isEligibleForLoan = bankCreditStateQuery.getState().getData().getLoanEligibleFlag();
             amount = bankCreditStateQuery.getState().getData().getAmount();
             companyName = bankCreditStateQuery.getState().getData().getCompanyName();
-            loanRequestState = new LoanRequestState(otherParty,me,companyName,amount,linearId,isEligibleForLoan, linearIdLoanDataVerState);
+            loanRequestState = new LoanRequestState(financeParty,bankParty,companyName,amount,linearId,isEligibleForLoan, linearIdLoanDataVerState);
             /********* NEED TO QUERY FROM BANK STATE THE FLAG ****/
             loanRequestState.setEligibleForLoan(bankCreditStateQuery.getState().getData().getLoanEligibleFlag());
             inputState.getState().getData().setEligibleForLoan(bankCreditStateQuery.getState().getData().getLoanEligibleFlag());
@@ -165,7 +165,7 @@ public class LoanResponseFlow {
             //Stage 4
             progressTracker.setCurrentStep(GATHERING_SIGS);
             // Send the state to the counterparty, and receive it back with their signature.
-            FlowSession otherPartySession = initiateFlow(otherParty);
+            FlowSession otherPartySession = initiateFlow(financeParty);
             final SignedTransaction fullySignedTx = subFlow(new CollectSignaturesFlow(partSignedTx, ImmutableSet.of(otherPartySession), CollectSignaturesFlow.Companion.tracker()));
             //stage 5
             progressTracker.setCurrentStep(FINALISING_TRANSACTION);

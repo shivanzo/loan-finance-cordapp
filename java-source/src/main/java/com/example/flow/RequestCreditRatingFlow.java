@@ -26,7 +26,7 @@ public class RequestCreditRatingFlow {
     @InitiatingFlow
     @StartableByRPC
     public static class Initiator extends FlowLogic<SignedTransaction> {
-        private final Party otherParty;
+        private final Party creditParty;
         private String companyName;
         private boolean isEligibleForLoan;
         private int amount;
@@ -34,9 +34,8 @@ public class RequestCreditRatingFlow {
         private UniqueIdentifier linearIdRequestForLoan;
 
         /** This constructor is called from REST API **/
-        public Initiator(Party otherParty,UniqueIdentifier linearIdRequestForLoan) {
-
-            this.otherParty = otherParty;
+        public Initiator(Party creditParty, UniqueIdentifier linearIdRequestForLoan) {
+            this.creditParty = creditParty;
             this.linearIdRequestForLoan =linearIdRequestForLoan;
         }
 
@@ -98,7 +97,7 @@ public class RequestCreditRatingFlow {
 
             final Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
             progressTracker.setCurrentStep(LOAN_ELIGIBILITY);
-            Party me = getServiceHub().getMyInfo().getLegalIdentities().get(0);
+            Party bankParty = getServiceHub().getMyInfo().getLegalIdentities().get(0);
             StateAndRef<LoanVerificationState> financStateInstance = null;
 
             /******Validation of financeDataState linear id *****/
@@ -119,11 +118,11 @@ public class RequestCreditRatingFlow {
               /*** Getting the amount, companyName and loan-eligibility from the vault of Previous State **/
               amount = financeStateListResults.get(0).getState().getData().getAmount();
               companyName = financeStateListResults.get(0).getState().getData().getCompanyName();
-              isEligibleForLoan = financeStateListResults.get(0).getState().getData().isEligibleForLoan();
+              isEligibleForLoan = false;
 
             /******* Validation of financeDataState linear id *****/
 
-            LoanVerificationState loanVerificationState = new LoanVerificationState(amount,me,otherParty, isEligibleForLoan, companyName,new UniqueIdentifier(),linearIdRequestForLoan);
+            LoanVerificationState loanVerificationState = new LoanVerificationState(amount,bankParty, creditParty, isEligibleForLoan, companyName,new UniqueIdentifier(),linearIdRequestForLoan);
             final Command<LoanVerificationContract.Commands.SendForApproval> sendLoanApprovalCommand = new Command<LoanVerificationContract.Commands.SendForApproval>(new LoanVerificationContract.Commands.SendForApproval(),ImmutableList.of(loanVerificationState.getBankNode().getOwningKey(), loanVerificationState.getCreditAgencyNode().getOwningKey()));
             final TransactionBuilder txBuilder = new TransactionBuilder(notary)
                     .addOutputState(loanVerificationState,LoanVerificationContract.LOANVERIFICATION_CONTRACT_ID)
@@ -139,7 +138,7 @@ public class RequestCreditRatingFlow {
             //Stage 4
             progressTracker.setCurrentStep(GATHERING_SIGS);
             // Send the state to the counterparty, and receive it back with their signature.
-            FlowSession otherPartySession = initiateFlow(otherParty);
+            FlowSession otherPartySession = initiateFlow(creditParty);
             final SignedTransaction fullySignedTx = subFlow(new CollectSignaturesFlow(partSignedTx, ImmutableSet.of(otherPartySession), CollectSignaturesFlow.Companion.tracker()));
             //stage 5
             progressTracker.setCurrentStep(FINALISING_TRANSACTION);

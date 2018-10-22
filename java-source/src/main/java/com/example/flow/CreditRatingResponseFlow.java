@@ -22,7 +22,7 @@ public class CreditRatingResponseFlow {
     @InitiatingFlow
     @StartableByRPC
     public static class Initiator extends FlowLogic<SignedTransaction> {
-        private final Party otherParty;
+        private final Party bankParty;
         private  String companyName;
         private boolean isEligibleForLoanFlag;
         private int amount ;
@@ -31,8 +31,8 @@ public class CreditRatingResponseFlow {
         UniqueIdentifier linearIdLoanDataVerState = null;
 
         /* This constructor is called from REST API **/
-        public Initiator(Party otherParty,UniqueIdentifier linearIdLoanDataVerState) {
-            this.otherParty = otherParty;
+        public Initiator(Party bankParty, UniqueIdentifier linearIdLoanDataVerState) {
+            this.bankParty = bankParty;
             this.linearIdLoanDataVerState = linearIdLoanDataVerState;
         }
 
@@ -91,9 +91,9 @@ public class CreditRatingResponseFlow {
         @Suspendable
         @Override
         public SignedTransaction call() throws FlowException {
-
+            LoanVerificationState loanVerificationStates = null;
             final Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
-            Party me = getServiceHub().getMyInfo().getLegalIdentities().get(0);
+            Party creditParty = getServiceHub().getMyInfo().getLegalIdentities().get(0);
 
             /* Querying LoanVerificationState from vault using linear id */
             QueryCriteria criteriaBankState = new QueryCriteria.LinearStateQueryCriteria(
@@ -120,16 +120,16 @@ public class CreditRatingResponseFlow {
 
             /** Setting the loanEligibility flag in the state's vault **/
             if(contains) {
-                inputState.getState().getData().setEligibleForLoan(false);
-                throw new FlowException("This company is blacklisted for LOAN, Loan is rejected ..!!!");
+                loanVerificationStates = new LoanVerificationState(amount, bankParty,creditParty,false, companyName,linearId, linearIdLoanReqState);
             }
             else {
-                inputState.getState().getData().setEligibleForLoan(true);
+                 loanVerificationStates = new LoanVerificationState(amount, bankParty,creditParty,true, companyName,linearId, linearIdLoanReqState);
+
             }
 
             progressTracker.setCurrentStep(LOAN_ELIGIBILITY_RESPONSE);
 
-            LoanVerificationState loanVerificationStates = new LoanVerificationState(amount,otherParty,me,true, companyName,linearId, linearIdLoanReqState);
+            //LoanVerificationState loanVerificationStates = new LoanVerificationState(amount,bankParty,me,true, companyName,linearId, linearIdLoanReqState);
             final Command<LoanVerificationContract.Commands.ReceiveCreditApproval> receiveCreditApproval = new Command<LoanVerificationContract.Commands.ReceiveCreditApproval>(new LoanVerificationContract.Commands.ReceiveCreditApproval(),ImmutableList.of(loanVerificationStates.getCreditAgencyNode().getOwningKey(), loanVerificationStates.getBankNode().getOwningKey()));
             final TransactionBuilder txBuilder = new TransactionBuilder(notary)
                     .addInputState(inputState)
@@ -145,7 +145,7 @@ public class CreditRatingResponseFlow {
             //Stage 4
             progressTracker.setCurrentStep(GATHERING_SIGS);
             // Send the state to the counterparty, and receive it back with their signature.
-            FlowSession otherPartySession = initiateFlow(otherParty);
+            FlowSession otherPartySession = initiateFlow(bankParty);
             final SignedTransaction fullySignedTx = subFlow(new CollectSignaturesFlow(partSignedTx, ImmutableSet.of(otherPartySession), CollectSignaturesFlow.Companion.tracker()));
             //stage 5
             progressTracker.setCurrentStep(FINALISING_TRANSACTION);
