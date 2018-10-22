@@ -12,25 +12,25 @@ import java.io.Serializable;
 import java.util.List;
 
 @CordaSerializable
-public class LoanRequestDataState implements LinearState,Serializable {
+public class LoanRequestState implements LinearState,Serializable {
 
     private Party financeNode;
     private Party bankNode;
     private String companyName;
     private int amount;
-    private boolean isEligibleForLoanFlag;
-    private UniqueIdentifier linearIdDataVerState;
-    private UniqueIdentifier linearId;
+    private boolean isEligibleForLoan;
+    private final UniqueIdentifier linearIdVerificationState;
+    private final UniqueIdentifier linearIdLoanReqState;
 
     @ConstructorForDeserialization
-    public LoanRequestDataState(Party financeNode, Party bankNode, String companyName, int amount, UniqueIdentifier linearId, boolean isEligibleForLoanFlag, UniqueIdentifier linearIdDataVerState) {
+    public LoanRequestState(Party financeNode, Party bankNode, String companyName, int amount, UniqueIdentifier linearIdLoanReqState, boolean isEligibleForLoan, UniqueIdentifier linearIdVerificationState) {
         this.financeNode = financeNode;
         this.bankNode = bankNode;
         this.companyName = companyName;
         this.amount = amount;
-        this.linearId = linearId;
-        this.isEligibleForLoanFlag = isEligibleForLoanFlag;
-        this.linearIdDataVerState = linearIdDataVerState;
+        this.linearIdLoanReqState = linearIdLoanReqState;
+        this.isEligibleForLoan = isEligibleForLoan;
+        this.linearIdVerificationState = linearIdVerificationState;
     }
 
     public Party getFinanceNode() {
@@ -59,31 +59,27 @@ public class LoanRequestDataState implements LinearState,Serializable {
         this.companyName = companyName;
     }
 
-    public boolean isEligibleForLoanFlag() {
-        return isEligibleForLoanFlag;
+    public boolean isEligibleForLoan() {
+        return isEligibleForLoan;
     }
 
-    public void setEligibleForLoanFlag(boolean isEligibleForLoanFlag) {
-        this.isEligibleForLoanFlag = isEligibleForLoanFlag;
+    public void setEligibleForLoan(boolean isEligibleForLoanFlag) {
+        this.isEligibleForLoan = isEligibleForLoanFlag;
     }
 
     public void setFinanceNode(Party financeNode) {
         this.financeNode = financeNode;
     }
 
-    public UniqueIdentifier getLinearIdDataVerState() {
-        return linearIdDataVerState;
-    }
-
-    public void setLinearIdDataVerState(UniqueIdentifier linearIdDataVerState) {
-        this.linearIdDataVerState = linearIdDataVerState;
+    public UniqueIdentifier getLinearIdVerificationState() {
+        return linearIdVerificationState;
     }
 
 
     @Override
     public UniqueIdentifier getLinearId()
     {
-        return linearId;
+        return linearIdLoanReqState;
     }
 
     @Override

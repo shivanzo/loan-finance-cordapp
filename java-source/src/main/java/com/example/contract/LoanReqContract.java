@@ -1,7 +1,7 @@
 /**** @author : Shivan Sawant ***/
 package com.example.contract;
 
-import com.example.state.LoanRequestDataState;
+import com.example.state.LoanRequestState;
 import net.corda.core.contracts.Command;
 import net.corda.core.contracts.CommandData;
 import net.corda.core.contracts.Contract;
@@ -12,8 +12,8 @@ import net.corda.core.transactions.LedgerTransaction;
 import java.security.PublicKey;
 import java.util.List;
 
-public class LoanReqDataContract implements Contract {
-    public static final String FINANCE_CONTRACT_ID = "com.example.contract.LoanReqDataContract";
+public class LoanReqContract implements Contract {
+    public static final String LOANREQUEST_CONTRACT_ID = "com.example.contract.LoanReqContract";
 
     @Override
     public void verify(LedgerTransaction tx) throws IllegalArgumentException {
@@ -33,10 +33,10 @@ public class LoanReqDataContract implements Contract {
 
                ContractState outputState = tx.getOutput(0);
 
-               if (!(outputState instanceof LoanRequestDataState))
-                   throw new IllegalArgumentException("Ouput must be a LoanRequestDataState");
+               if (!(outputState instanceof LoanRequestState))
+                   throw new IllegalArgumentException("Ouput must be a LoanRequestState");
 
-               LoanRequestDataState financAndBankState = (LoanRequestDataState) outputState;
+               LoanRequestState financAndBankState = (LoanRequestState) outputState;
 
                if ( (financAndBankState.getAmount() < 1000) && (financAndBankState.getAmount() > 100000000))
                    throw new IllegalArgumentException("Loan amount is out of the range : "+financAndBankState.getAmount());
@@ -53,7 +53,7 @@ public class LoanReqDataContract implements Contract {
                 throw new IllegalArgumentException("Bank should sign the transaction");
         }
 
-        else if(commandType instanceof Commands.loanNotification) {
+        else if(commandType instanceof Commands.LoanNotification) {
             if(tx.getInputStates().size() !=1)
                 throw new IllegalArgumentException("Must have atleast one input state");
 
@@ -63,14 +63,14 @@ public class LoanReqDataContract implements Contract {
             ContractState input = tx.getInput(0);
             ContractState output = tx.getOutput(0);
 
-            if(!(input instanceof LoanRequestDataState))
-                throw new IllegalArgumentException("Input should be of the type LoanDataVerificationState");
+            if(!(input instanceof LoanRequestState))
+                throw new IllegalArgumentException("Input should be of the type LoanVerificationState");
 
-            if(!(output instanceof LoanRequestDataState))
-                throw new IllegalArgumentException("output should be of the type LoanDataVerificationState");
+            if(!(output instanceof LoanRequestState))
+                throw new IllegalArgumentException("output should be of the type LoanVerificationState");
 
-            LoanRequestDataState inputState = (LoanRequestDataState) input;
-            LoanRequestDataState outputState = (LoanRequestDataState) output;
+            LoanRequestState inputState = (LoanRequestState) input;
+            LoanRequestState outputState = (LoanRequestState) output;
 
             PublicKey bankKey = inputState.getBankNode().getOwningKey();
             PublicKey financeAgencyKey = outputState.getFinanceNode().getOwningKey();
@@ -87,6 +87,6 @@ public class LoanReqDataContract implements Contract {
 
     public interface Commands extends CommandData {
        public class InitiateLoan implements Commands {}
-       public class loanNotification implements Commands {}
+       public class LoanNotification implements Commands {}
     }
 }

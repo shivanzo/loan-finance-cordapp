@@ -1,11 +1,10 @@
 package com.example.flow;
 
-import com.example.state.LoanRequestDataState;
+import com.example.state.LoanRequestState;
 import com.google.common.collect.ImmutableList;
 import net.corda.core.concurrent.CordaFuture;
 import net.corda.core.contracts.ContractState;
 import net.corda.core.contracts.TransactionState;
-import net.corda.core.contracts.TransactionVerificationException;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.testing.node.MockNetwork;
 import net.corda.testing.node.StartedMockNode;
@@ -18,7 +17,6 @@ import org.junit.rules.ExpectedException;
 
 import java.util.List;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.assertEquals;
 
 public class FlowTest {
@@ -39,7 +37,7 @@ public class FlowTest {
         nodeB = network.createPartyNode(null);
         nodeC = network.createPartyNode(null);
         for (StartedMockNode node : ImmutableList.of(nodeA, nodeB,nodeC)) {
-            node.registerInitiatedFlow(LoanInitiatingFlow.Acceptor.class);
+            node.registerInitiatedFlow(RequestForLoanFlow.Acceptor.class);
         }
         network.runNetwork();
     }
@@ -51,7 +49,7 @@ public class FlowTest {
 
     @Test
     public void recordedTransactionHasNoInputsAndASingleOutputTheInputIOU() throws Exception {
-        LoanInitiatingFlow.Initiator flow = new LoanInitiatingFlow.Initiator( nodeB.getInfo().getLegalIdentities().get(0), amount,companyName);
+        RequestForLoanFlow.Initiator flow = new RequestForLoanFlow.Initiator( nodeB.getInfo().getLegalIdentities().get(0), amount,companyName);
         CordaFuture<SignedTransaction> future = nodeA.startFlow(flow);
         network.runNetwork();
         SignedTransaction signedTx = future.get();
@@ -62,7 +60,7 @@ public class FlowTest {
             List<TransactionState<ContractState>> txOutputs = recordedTx.getTx().getOutputs();
             assert (((List) txOutputs).size() == 1);
 
-            LoanRequestDataState recordedState = (LoanRequestDataState) txOutputs.get(0).getData();
+            LoanRequestState recordedState = (LoanRequestState) txOutputs.get(0).getData();
             assertEquals(recordedState.getFinanceNode(), nodeA.getInfo().getLegalIdentities().get(0));
             assertEquals(recordedState.getBankNode(), nodeB.getInfo().getLegalIdentities().get(0));
         }
@@ -76,7 +74,7 @@ public class FlowTest {
 
     @Test
     public void flowRecordsATransactionInBothPartiesTransactionStorages() throws Exception {
-        LoanInitiatingFlow.Initiator flow = new LoanInitiatingFlow.Initiator( nodeB.getInfo().getLegalIdentities().get(0), amount,companyName);
+        RequestForLoanFlow.Initiator flow = new RequestForLoanFlow.Initiator( nodeB.getInfo().getLegalIdentities().get(0), amount,companyName);
         CordaFuture<SignedTransaction> future = nodeA.startFlow(flow);
         network.runNetwork();
         SignedTransaction signedTx = future.get();
@@ -89,7 +87,7 @@ public class FlowTest {
 
     @Test
     public void signedTransactionReturnedByTheFlowIsSignedByTheAcceptor() throws Exception {
-        LoanInitiatingFlow.Initiator flow = new LoanInitiatingFlow.Initiator( nodeB.getInfo().getLegalIdentities().get(0), amount,companyName);
+        RequestForLoanFlow.Initiator flow = new RequestForLoanFlow.Initiator( nodeB.getInfo().getLegalIdentities().get(0), amount,companyName);
         CordaFuture<SignedTransaction> future = nodeA.startFlow(flow);
         network.runNetwork();
 
@@ -100,7 +98,7 @@ public class FlowTest {
 
     @Test
     public void signedTransactionReturnedByTheFlowIsSignedByTheInitiator() throws Exception {
-        LoanInitiatingFlow.Initiator flow = new LoanInitiatingFlow.Initiator( nodeB.getInfo().getLegalIdentities().get(0), amount,companyName);
+        RequestForLoanFlow.Initiator flow = new RequestForLoanFlow.Initiator( nodeB.getInfo().getLegalIdentities().get(0), amount,companyName);
         CordaFuture<SignedTransaction> future = nodeA.startFlow(flow);
         network.runNetwork();
 

@@ -1,9 +1,9 @@
 package com.example.flow;
 
 import co.paralleluniverse.fibers.Suspendable;
-import com.example.contract.LoanReqDataContract;
-import com.example.state.LoanDataVerificationState;
-import com.example.state.LoanRequestDataState;
+import com.example.contract.LoanReqContract;
+import com.example.state.LoanRequestState;
+import com.example.state.LoanVerificationState;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import net.corda.core.contracts.Command;
@@ -96,9 +96,9 @@ public class LoanResponseFlow {
         public SignedTransaction call() throws FlowException {
 
             Party me = getServiceHub().getMyInfo().getLegalIdentities().get(0);
-            StateAndRef<LoanRequestDataState> inputState = null;
-            StateAndRef<LoanDataVerificationState> bankCreditStateQuery = null;
-            LoanDataVerificationState bankState = new LoanDataVerificationState(me, linearIdLoanDataVerState, linearIdLoanReqDataState);
+            StateAndRef<LoanRequestState> inputState = null;
+            StateAndRef<LoanVerificationState> bankCreditStateQuery = null;
+            LoanVerificationState bankState = new LoanVerificationState(me, linearIdLoanDataVerState, linearIdLoanReqDataState);
 
             QueryCriteria criteria = new QueryCriteria.LinearStateQueryCriteria(
                     null,
@@ -109,7 +109,7 @@ public class LoanResponseFlow {
             List<UniqueIdentifier> financeStateListValidationResult = new ArrayList<UniqueIdentifier>();
             List<UniqueIdentifier> bankAndCreditStateRetrieve = new ArrayList<UniqueIdentifier>();
 
-            List<StateAndRef<LoanRequestDataState>> financeStateListResults = getServiceHub().getVaultService().queryBy(LoanRequestDataState.class,criteria).getStates();
+            List<StateAndRef<LoanRequestState>> financeStateListResults = getServiceHub().getVaultService().queryBy(LoanRequestState.class,criteria).getStates();
 
             if (financeStateListResults.isEmpty()) {
                 throw new FlowException("Linearid with id %s not found."+ linearIdLoanReqDataState);
@@ -123,9 +123,9 @@ public class LoanResponseFlow {
             progressTracker.setCurrentStep(BANK_RESPONSE);
             //Generate an unsigned transaction
 
-            /** adding the linear id of unconsumed Previous LoanRequestDataState **/
+            /** adding the linear id of unconsumed Previous LoanRequestState **/
             linearId = linearIdLoanReqDataState;
-            LoanRequestDataState loanRequestDataState = null;
+            LoanRequestState loanRequestState = null;
 
             QueryCriteria criteriaForBankVault = new QueryCriteria.LinearStateQueryCriteria(
                     null,
@@ -133,7 +133,7 @@ public class LoanResponseFlow {
                     Vault.StateStatus.UNCONSUMED,
                     null);
 
-            List<StateAndRef<LoanDataVerificationState>>  bankAndCreditStateList = getServiceHub().getVaultService().queryBy(LoanDataVerificationState.class,criteriaForBankVault).getStates();
+            List<StateAndRef<LoanVerificationState>>  bankAndCreditStateList = getServiceHub().getVaultService().queryBy(LoanVerificationState.class,criteriaForBankVault).getStates();
 
             if(!bankAndCreditStateList.isEmpty()) {
                 bankCreditStateQuery = bankAndCreditStateList.get(0);
@@ -145,16 +145,15 @@ public class LoanResponseFlow {
             isEligibleForLoan = bankCreditStateQuery.getState().getData().getLoanEligibleFlag();
             amount = bankCreditStateQuery.getState().getData().getAmount();
             companyName = bankCreditStateQuery.getState().getData().getCompanyName();
-            loanRequestDataState = new LoanRequestDataState(otherParty,me,companyName,amount,linearId,isEligibleForLoan, linearIdLoanDataVerState);
+            loanRequestState = new LoanRequestState(otherParty,me,companyName,amount,linearId,isEligibleForLoan, linearIdLoanDataVerState);
             /********* NEED TO QUERY FROM BANK STATE THE FLAG ****/
-            loanRequestDataState.setEligibleForLoanFlag(bankCreditStateQuery.getState().getData().getLoanEligibleFlag());
-            inputState.getState().getData().setEligibleForLoanFlag(bankCreditStateQuery.getState().getData().getLoanEligibleFlag());
-            loanRequestDataState.setLinearIdDataVerState(linearIdLoanDataVerState);
+            loanRequestState.setEligibleForLoan(bankCreditStateQuery.getState().getData().getLoanEligibleFlag());
+            inputState.getState().getData().setEligibleForLoan(bankCreditStateQuery.getState().getData().getLoanEligibleFlag());
 
-            final Command<LoanReqDataContract.Commands.loanNotification> loanNotificationCommand = new Command<LoanReqDataContract.Commands.loanNotification>(new LoanReqDataContract.Commands.loanNotification(), ImmutableList.of(loanRequestDataState.getBankNode().getOwningKey(), loanRequestDataState.getFinanceNode().getOwningKey()));
+            final Command<LoanReqContract.Commands.LoanNotification> loanNotificationCommand = new Command<LoanReqContract.Commands.LoanNotification>(new LoanReqContract.Commands.LoanNotification(), ImmutableList.of(loanRequestState.getBankNode().getOwningKey(), loanRequestState.getFinanceNode().getOwningKey()));
             final TransactionBuilder txBuilder = new TransactionBuilder(notary)
                     .addInputState(inputState)
-                    .addOutputState(loanRequestDataState, LoanReqDataContract.FINANCE_CONTRACT_ID).addCommand(loanNotificationCommand);
+                    .addOutputState(loanRequestState, LoanReqContract.LOANREQUEST_CONTRACT_ID).addCommand(loanNotificationCommand);
 
             //step 2
             progressTracker.setCurrentStep(VERIFYING_TRANSACTION);
@@ -196,7 +195,7 @@ public class LoanResponseFlow {
                 protected void checkTransaction(SignedTransaction stx) throws FlowException {
                     requireThat(require -> {
                         ContractState output = stx.getTx().getOutputs().get(0).getData();
-                        require.using("Error ...!! This must be Bank's transaction to Finance Agency (LoanRequestDataState transaction).", output instanceof LoanRequestDataState);
+                        require.using("Error ...!! This must be Bank's transaction to Finance Agency (LoanRequestState transaction).", output instanceof LoanRequestState);
                         return null;
                     });
                 }

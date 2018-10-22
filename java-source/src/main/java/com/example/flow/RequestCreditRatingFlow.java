@@ -1,42 +1,59 @@
 package com.example.flow;
 
 import co.paralleluniverse.fibers.Suspendable;
-import com.example.contract.LoanReqDataContract;
-import com.example.state.LoanRequestDataState;
+import com.example.contract.LoanVerificationContract;
+import com.example.state.LoanRequestState;
+import com.example.state.LoanVerificationState;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import net.corda.core.contracts.Command;
 import net.corda.core.contracts.ContractState;
+import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.flows.*;
 import net.corda.core.identity.Party;
+import net.corda.core.node.services.Vault;
+import net.corda.core.node.services.vault.QueryCriteria;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
 import net.corda.core.utilities.ProgressTracker;
 
+import java.util.ArrayList;
+import java.util.List;
 import static net.corda.core.contracts.ContractsDSL.requireThat;
 
-public class LoanInitiatingFlow {
+public class RequestCreditRatingFlow {
     @InitiatingFlow
     @StartableByRPC
     public static class Initiator extends FlowLogic<SignedTransaction> {
-
         private final Party otherParty;
-        private int amount;
         private String companyName;
+        private boolean isEligibleForLoan;
+        private int amount;
         private UniqueIdentifier linearId;
+        private UniqueIdentifier linearIdRequestForLoan;
 
-        /**
-         * This constructor is being called from REST API
-         **/
-        public Initiator(Party otherParty, int amount, String companyName) {
+        /** This constructor is called from REST API **/
+        public Initiator(Party otherParty,UniqueIdentifier linearIdRequestForLoan) {
+
             this.otherParty = otherParty;
-            this.amount = amount;
-            this.companyName = companyName;
+            this.linearIdRequestForLoan =linearIdRequestForLoan;
         }
 
-        public UniqueIdentifier getLinearId() {
-            return linearId;
+        public UniqueIdentifier getLinearIdRequestForLoan() {
+            return linearIdRequestForLoan;
+        }
+
+        public void setLinearIdRequestForLoan(UniqueIdentifier linearIdRequestForLoan) {
+            this.linearIdRequestForLoan = linearIdRequestForLoan;
+        }
+
+        public boolean isEligibleForLoan() {
+            return isEligibleForLoan;
+        }
+
+        public void setEligibleForLoan(boolean eligibleForLoan) {
+            this.isEligibleForLoan = eligibleForLoan;
         }
 
         public int getAmount() {
@@ -47,35 +64,30 @@ public class LoanInitiatingFlow {
             this.amount = amount;
         }
 
-        public void setCompanyName(String companyName) {
-            this.companyName = companyName;
-        }
 
-        private final ProgressTracker.Step LOAN_REQUEST = new ProgressTracker.Step("Finance Agency sending Loan application for bank");
         private final ProgressTracker.Step VERIFYING_TRANSACTION = new ProgressTracker.Step("Verifying contract constraints.");
         private final ProgressTracker.Step LOAN_ELIGIBILITY = new ProgressTracker.Step("Sending Loan application to credit rating agecny to check loan eligibilty and CIBIL score");
         private final ProgressTracker.Step LOAN_ELIGIBILITY_RESPONSE = new ProgressTracker.Step("Response from credit rating agency about loan eligibility and approval");
-        private final ProgressTracker.Step BANK_RESPONSE = new ProgressTracker.Step("Sending response to Finance agency from Bank");
         private final ProgressTracker.Step SIGNING_TRANSACTION = new ProgressTracker.Step("Signing transaction with our private key.");
         private final ProgressTracker.Step GATHERING_SIGS = new ProgressTracker.Step("Gathering the counterparty's signature.") {
-            public ProgressTracker childProgressTracker() {
+            public ProgressTracker childProgressTracker()
+            {
                 return CollectSignaturesFlow.Companion.tracker();
             }
         };
 
         private final ProgressTracker.Step FINALISING_TRANSACTION = new ProgressTracker.Step("Obtaining notary signature and recording transaction.") {
-            public ProgressTracker childProgressTracker() {
+            public ProgressTracker childProgressTracker()
+            {
                 return FinalityFlow.Companion.tracker();
             }
         };
 
         private final ProgressTracker progressTracker = new ProgressTracker(
-                LOAN_REQUEST,
                 VERIFYING_TRANSACTION,
                 SIGNING_TRANSACTION,
                 LOAN_ELIGIBILITY,
                 LOAN_ELIGIBILITY_RESPONSE,
-                BANK_RESPONSE,
                 GATHERING_SIGS,
                 FINALISING_TRANSACTION
         );
@@ -85,22 +97,40 @@ public class LoanInitiatingFlow {
         public SignedTransaction call() throws FlowException {
 
             final Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
-            UniqueIdentifier uniqueIdentifier = null;
-
-            //Stage 1
-            progressTracker.setCurrentStep(LOAN_REQUEST);
-
-            //Generate an unsigned transaction
+            progressTracker.setCurrentStep(LOAN_ELIGIBILITY);
             Party me = getServiceHub().getMyInfo().getLegalIdentities().get(0);
-            LoanRequestDataState financeBankState = new LoanRequestDataState(me, otherParty, companyName, amount, new UniqueIdentifier(), false, uniqueIdentifier);
-            final Command<LoanReqDataContract.Commands.InitiateLoan> initiateLoanCommand = new Command<LoanReqDataContract.Commands.InitiateLoan>(new LoanReqDataContract.Commands.InitiateLoan(), ImmutableList.of(financeBankState.getBankNode().getOwningKey(), financeBankState.getFinanceNode().getOwningKey()));
+            StateAndRef<LoanVerificationState> financStateInstance = null;
 
+            /******Validation of financeDataState linear id *****/
+               QueryCriteria criteria = new QueryCriteria.LinearStateQueryCriteria(
+                        null,
+                        ImmutableList.of(linearIdRequestForLoan),
+                        Vault.StateStatus.UNCONSUMED,
+                        null);
+
+                List<UniqueIdentifier> financeStateListValidationResult = new ArrayList<UniqueIdentifier>();
+                List<StateAndRef<LoanRequestState>> financeStateListResults = getServiceHub().getVaultService().queryBy(LoanRequestState.class,criteria).getStates();
+                if (financeStateListResults.isEmpty()) {
+                    throw new FlowException("Linearid with id not found."+linearIdRequestForLoan );
+                }
+
+
+
+              /*** Getting the amount, companyName and loan-eligibility from the vault of Previous State **/
+              amount = financeStateListResults.get(0).getState().getData().getAmount();
+              companyName = financeStateListResults.get(0).getState().getData().getCompanyName();
+              isEligibleForLoan = financeStateListResults.get(0).getState().getData().isEligibleForLoan();
+
+            /******* Validation of financeDataState linear id *****/
+
+            LoanVerificationState loanVerificationState = new LoanVerificationState(amount,me,otherParty, isEligibleForLoan, companyName,new UniqueIdentifier(),linearIdRequestForLoan);
+            final Command<LoanVerificationContract.Commands.SendForApproval> sendLoanApprovalCommand = new Command<LoanVerificationContract.Commands.SendForApproval>(new LoanVerificationContract.Commands.SendForApproval(),ImmutableList.of(loanVerificationState.getBankNode().getOwningKey(), loanVerificationState.getCreditAgencyNode().getOwningKey()));
             final TransactionBuilder txBuilder = new TransactionBuilder(notary)
-                    .addOutputState(financeBankState, LoanReqDataContract.FINANCE_CONTRACT_ID)
-                    .addCommand(initiateLoanCommand);
+                    .addOutputState(loanVerificationState,LoanVerificationContract.LOANVERIFICATION_CONTRACT_ID)
+                    .addCommand(sendLoanApprovalCommand);
 
+            //step 2
             progressTracker.setCurrentStep(VERIFYING_TRANSACTION);
-
             txBuilder.verify(getServiceHub());
             //stage 3
             progressTracker.setCurrentStep(SIGNING_TRANSACTION);
@@ -120,7 +150,6 @@ public class LoanInitiatingFlow {
 
     @InitiatedBy(Initiator.class)
     public static class Acceptor extends FlowLogic<SignedTransaction> {
-
         private final FlowSession otherPartyFlow;
 
         public Acceptor(FlowSession otherPartyFlow) {
@@ -130,7 +159,9 @@ public class LoanInitiatingFlow {
         @Suspendable
         @Override
         public SignedTransaction call() throws FlowException {
-            class SignTxFlow extends SignTransactionFlow {
+
+            class SignTxFlow extends  SignTransactionFlow {
+
                 public SignTxFlow(FlowSession otherSideSession, ProgressTracker progressTracker) {
                     super(otherSideSession, progressTracker);
                 }
@@ -139,7 +170,7 @@ public class LoanInitiatingFlow {
                 protected void checkTransaction(SignedTransaction stx) throws FlowException {
                     requireThat(require -> {
                         ContractState output = stx.getTx().getOutputs().get(0).getData();
-                        require.using("This must be a transaction between bank and finance Agency (LoanRequestDataState transaction).", output instanceof LoanRequestDataState);
+                        require.using("This transaction should be between Credit Agency and bank (LoanDataVerifactionState).", output instanceof LoanVerificationState);
                         return null;
                     });
                 }

@@ -1,8 +1,8 @@
 package com.example.flow;
 
 import co.paralleluniverse.fibers.Suspendable;
-import com.example.contract.LoanDataVerificationContract;
-import com.example.state.LoanDataVerificationState;
+import com.example.contract.LoanVerificationContract;
+import com.example.state.LoanVerificationState;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import net.corda.core.contracts.*;
@@ -18,7 +18,7 @@ import java.util.Arrays;
 import java.util.List;
 import static net.corda.core.contracts.ContractsDSL.requireThat;
 
-public class LoanEligibilityResponseFlow {
+public class CreditRatingResponseFlow {
     @InitiatingFlow
     @StartableByRPC
     public static class Initiator extends FlowLogic<SignedTransaction> {
@@ -95,15 +95,15 @@ public class LoanEligibilityResponseFlow {
             final Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
             Party me = getServiceHub().getMyInfo().getLegalIdentities().get(0);
 
-            /* Querying LoanDataVerificationState from vault using linear id */
+            /* Querying LoanVerificationState from vault using linear id */
             QueryCriteria criteriaBankState = new QueryCriteria.LinearStateQueryCriteria(
                     null,
                     ImmutableList.of(linearIdLoanDataVerState),
                     Vault.StateStatus.UNCONSUMED,
                     null);
 
-            StateAndRef<LoanDataVerificationState> inputState = null;
-            List<StateAndRef<LoanDataVerificationState>> inputStateList = getServiceHub().getVaultService().queryBy(LoanDataVerificationState.class,criteriaBankState).getStates();
+            StateAndRef<LoanVerificationState> inputState = null;
+            List<StateAndRef<LoanVerificationState>> inputStateList = getServiceHub().getVaultService().queryBy(LoanVerificationState.class,criteriaBankState).getStates();
             if(inputStateList == null || inputStateList.isEmpty() ) {
                 throw new IllegalArgumentException("State Cannot be found : "+inputStateList.size() +" "+ linearIdLoanDataVerState);
             }
@@ -113,27 +113,27 @@ public class LoanEligibilityResponseFlow {
 
             companyName = inputStateList.get(0).getState().getData().getCompanyName();
             amount = inputStateList.get(0).getState().getData().getAmount();
-            linearIdLoanReqState = inputStateList.get(0).getState().getData().getLinearIdLoanReqDataState();
+            linearIdLoanReqState = inputStateList.get(0).getState().getData().getLinearIdLoanReqState();
 
             List<String> blacklisted = Arrays.asList("jetsAirways","Kong airways","Hypermarket");
             boolean contains = blacklisted.contains(companyName);
 
             /** Setting the loanEligibility flag in the state's vault **/
             if(contains) {
-                inputState.getState().getData().setEligibleForLoanFlag(false);
+                inputState.getState().getData().setEligibleForLoan(false);
                 throw new FlowException("This company is blacklisted for LOAN, Loan is rejected ..!!!");
             }
             else {
-                inputState.getState().getData().setEligibleForLoanFlag(true);
+                inputState.getState().getData().setEligibleForLoan(true);
             }
 
             progressTracker.setCurrentStep(LOAN_ELIGIBILITY_RESPONSE);
 
-            LoanDataVerificationState loanDataVerificationStates = new LoanDataVerificationState(amount,otherParty,me,true, companyName,linearId, linearIdLoanReqState);
-            final Command<LoanDataVerificationContract.Commands.receiveCreditApproval> receiveCreditApproval = new Command<LoanDataVerificationContract.Commands.receiveCreditApproval>(new LoanDataVerificationContract.Commands.receiveCreditApproval(),ImmutableList.of(loanDataVerificationStates.getCreditRatingAgency().getOwningKey(), loanDataVerificationStates.getBankNode().getOwningKey()));
+            LoanVerificationState loanVerificationStates = new LoanVerificationState(amount,otherParty,me,true, companyName,linearId, linearIdLoanReqState);
+            final Command<LoanVerificationContract.Commands.ReceiveCreditApproval> receiveCreditApproval = new Command<LoanVerificationContract.Commands.ReceiveCreditApproval>(new LoanVerificationContract.Commands.ReceiveCreditApproval(),ImmutableList.of(loanVerificationStates.getCreditAgencyNode().getOwningKey(), loanVerificationStates.getBankNode().getOwningKey()));
             final TransactionBuilder txBuilder = new TransactionBuilder(notary)
                     .addInputState(inputState)
-                    .addOutputState(loanDataVerificationStates,LoanDataVerificationContract.BANK_CONTRACT_ID)
+                    .addOutputState(loanVerificationStates,LoanVerificationContract.LOANVERIFICATION_CONTRACT_ID)
                     .addCommand(receiveCreditApproval);
             //step 2
             progressTracker.setCurrentStep(VERIFYING_TRANSACTION);
@@ -173,8 +173,8 @@ public class LoanEligibilityResponseFlow {
                 {
                     requireThat(require -> {
                         ContractState output = stx.getTx().getOutputs().get(0).getData();
-                        require.using("This must be an credit agency transaction (LoanDataVerificationState).", output instanceof LoanDataVerificationState);
-                        LoanDataVerificationState bankAndCreditCheck = (LoanDataVerificationState) output;
+                        require.using("This must be an credit agency transaction (LoanVerificationState).", output instanceof LoanVerificationState);
+                        LoanVerificationState bankAndCreditCheck = (LoanVerificationState) output;
                         return null;
                     });
                 }

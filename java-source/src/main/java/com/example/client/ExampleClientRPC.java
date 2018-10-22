@@ -1,6 +1,6 @@
 package com.example.client;
 
-import com.example.state.LoanRequestDataState;
+import com.example.state.LoanRequestState;
 import net.corda.client.rpc.CordaRPCClient;
 import net.corda.client.rpc.CordaRPCClientConfiguration;
 import net.corda.core.contracts.StateAndRef;
@@ -22,7 +22,7 @@ import java.util.concurrent.ExecutionException;
 public class ExampleClientRPC {
     private static final Logger logger = LoggerFactory.getLogger(ExampleClientRPC.class);
 
-    private static void logState(StateAndRef<LoanRequestDataState> state) {
+    private static void logState(StateAndRef<LoanRequestState> state) {
         logger.info("{}", state.getState().getData());
     }
 
@@ -38,9 +38,9 @@ public class ExampleClientRPC {
         final CordaRPCOps proxy = client.start("user1", "test").getProxy();
 
         // Grab all existing and future states in the vault.
-        final DataFeed<Vault.Page<LoanRequestDataState>, Vault.Update<LoanRequestDataState>> dataFeed = proxy.vaultTrack(LoanRequestDataState.class);
-        final Vault.Page<LoanRequestDataState> snapshot = dataFeed.getSnapshot();
-        final Observable<Vault.Update<LoanRequestDataState>> updates = dataFeed.getUpdates();
+        final DataFeed<Vault.Page<LoanRequestState>, Vault.Update<LoanRequestState>> dataFeed = proxy.vaultTrack(LoanRequestState.class);
+        final Vault.Page<LoanRequestState> snapshot = dataFeed.getSnapshot();
+        final Observable<Vault.Update<LoanRequestState>> updates = dataFeed.getUpdates();
 
         // Log the 'placed' listen for new ones.
         snapshot.getStates().forEach(ExampleClientRPC::logState);

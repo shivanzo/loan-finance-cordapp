@@ -1,11 +1,11 @@
 package com.example.api;
 
 import com.example.flow.LoanResponseFlow;
-import com.example.flow.BankLoanProcessingFlow;
-import com.example.flow.LoanEligibilityResponseFlow;
-import com.example.flow.LoanInitiatingFlow;
-import com.example.state.LoanDataVerificationState;
-import com.example.state.LoanRequestDataState;
+import com.example.flow.RequestCreditRatingFlow;
+import com.example.flow.CreditRatingResponseFlow;
+import com.example.flow.RequestForLoanFlow;
+import com.example.state.LoanVerificationState;
+import com.example.state.LoanRequestState;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import net.corda.core.contracts.StateAndRef;
@@ -60,24 +60,24 @@ public class LoanFinanceApi {
     @Path("finance-vaults")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getFinacneBankQuery() {
-        System.out.println("VaultQuery : "+rpcOps.vaultQuery(LoanRequestDataState.class).getStates() );
-       return Response.status(200).entity(rpcOps.vaultQuery(LoanRequestDataState.class).getStates()).build();
+        System.out.println("VaultQuery : "+rpcOps.vaultQuery(LoanRequestState.class).getStates() );
+       return Response.status(200).entity(rpcOps.vaultQuery(LoanRequestState.class).getStates()).build();
     }
 
     @GET
     @Path("bank-vaults")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getBankAndCreditQuery() {
-        System.out.println("VaultQuery : "+rpcOps.vaultQuery(LoanDataVerificationState.class).getStates() );
-        return Response.status(200).entity(rpcOps.vaultQuery(LoanDataVerificationState.class).getStates()).build();
+        System.out.println("VaultQuery : "+rpcOps.vaultQuery(LoanVerificationState.class).getStates() );
+        return Response.status(200).entity(rpcOps.vaultQuery(LoanVerificationState.class).getStates()).build();
     }
 
     @GET
     @Path("credit-vaults")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getCreditBankQuery() {
-        System.out.println("VaultQuery : "+rpcOps.vaultQuery(LoanDataVerificationState.class).getStates() );
-        return Response.status(200).entity(rpcOps.vaultQuery(LoanDataVerificationState.class).getStates()).build();
+        System.out.println("VaultQuery : "+rpcOps.vaultQuery(LoanVerificationState.class).getStates() );
+        return Response.status(200).entity(rpcOps.vaultQuery(LoanVerificationState.class).getStates()).build();
     }
 
     /*******start of Post request for path param.***/
@@ -109,13 +109,13 @@ public class LoanFinanceApi {
         }
 
         try {
-            LoanInitiatingFlow.Initiator initiator = new LoanInitiatingFlow.Initiator(otherParty,value,company);
+            RequestForLoanFlow.Initiator initiator = new RequestForLoanFlow.Initiator(otherParty,value,company);
             final SignedTransaction signedTx = rpcOps
                     .startTrackedFlowDynamic(initiator.getClass(), otherParty,value,company)
                     .getReturnValue()
                     .get();
 
-            System.out.println("Current linear State : "+initiator.getLinearId());
+            System.out.println("Current linear State : "+initiator.getLinearIdLoanReqState());
             final String msg = String.format("FINANCE AGENCY OF WALES. \n Transaction id %s  is successfully committed to ledger.\n ", signedTx.getId());
             return Response.status(CREATED).entity(msg).build();
         } catch (Throwable ex) {
@@ -161,9 +161,9 @@ public class LoanFinanceApi {
         UniqueIdentifier uuidFinanceState = linearIdFinanceState.copy(null,UUID.fromString(financeBankStateLinearId));
 
         try {
-            BankLoanProcessingFlow.Initiator initiator = new BankLoanProcessingFlow.Initiator(otherParty,uuidFinanceState);
+            RequestCreditRatingFlow.Initiator initiator = new RequestCreditRatingFlow.Initiator(otherParty,uuidFinanceState);
             final SignedTransaction signedTx = rpcOps
-                    .startTrackedFlowDynamic(BankLoanProcessingFlow.Initiator.class, otherParty,uuidFinanceState)
+                    .startTrackedFlowDynamic(RequestCreditRatingFlow.Initiator.class, otherParty,uuidFinanceState)
                     .getReturnValue()
                     .get();
 
@@ -204,14 +204,14 @@ public class LoanFinanceApi {
             return Response.status(BAD_REQUEST).entity("linear id of previous unconsumed state cannot be empty. \n").build();
         }
 
-        System.out.println("Vault Query Finance State : "+rpcOps.vaultQuery(LoanRequestDataState.class).getStates() );
+        System.out.println("Vault Query Finance State : "+rpcOps.vaultQuery(LoanRequestState.class).getStates() );
         UniqueIdentifier linearIdFinanceState = new UniqueIdentifier();
         UniqueIdentifier linearIdBankState = new UniqueIdentifier();
         //UniqueIdentifier uuidFinanceState = linearIdFinanceState.copy(null,UUID.fromString(financeBankStateLinearId));
         UniqueIdentifier uuidBankState = linearIdBankState.copy(null,UUID.fromString(bankCreditStateLinearId));
 
         try {
-            LoanEligibilityResponseFlow.Initiator initiator = new LoanEligibilityResponseFlow.Initiator(otherParty,uuidBankState);
+            CreditRatingResponseFlow.Initiator initiator = new CreditRatingResponseFlow.Initiator(otherParty,uuidBankState);
             final SignedTransaction signedTx = rpcOps
                     .startTrackedFlowDynamic(initiator.getClass(),otherParty,uuidBankState)
                     .getReturnValue()
@@ -295,7 +295,7 @@ public class LoanFinanceApi {
     @GET
     @Path("states")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<StateAndRef<LoanRequestDataState>> getStatesFromVault() {
-        return rpcOps.vaultQuery(LoanRequestDataState.class).getStates();
+    public List<StateAndRef<LoanRequestState>> getStatesFromVault() {
+        return rpcOps.vaultQuery(LoanRequestState.class).getStates();
     }
 }
