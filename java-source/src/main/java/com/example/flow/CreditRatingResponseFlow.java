@@ -29,6 +29,7 @@ public class CreditRatingResponseFlow {
         UniqueIdentifier linearId = null;
         UniqueIdentifier linearIdLoanReqState = null;
         UniqueIdentifier linearIdLoanDataVerState = null;
+        final String[] values = {"JETSAIRWAYS","AMERICONAIRWAYS","SAHARAAIRLINES","JETBLUEAIRLINE"};
 
         /* This constructor is called from REST API **/
         public Initiator(Party bankParty, UniqueIdentifier linearIdLoanDataVerState) {
@@ -115,8 +116,7 @@ public class CreditRatingResponseFlow {
             amount = inputStateList.get(0).getState().getData().getAmount();
             linearIdLoanReqState = inputStateList.get(0).getState().getData().getLinearIdLoanReq();
 
-            List<String> blacklisted = Arrays.asList("jetsAirways", "Kong airways", "Hypermarket");
-            boolean contains = blacklisted.contains(companyName);
+            boolean contains = Arrays.stream(values).anyMatch(companyName::equals);
 
             /** Setting the loanEligibility flag in the state's vault **/
             if (contains) {
