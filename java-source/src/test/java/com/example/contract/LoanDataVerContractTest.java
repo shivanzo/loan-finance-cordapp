@@ -105,7 +105,7 @@ public class LoanDataVerContractTest {
 
         transaction(ledgerServices,tx -> {
             tx.output(LOANVERIFICATION_CONTRACT_ID, new LoanVerificationState(amount,bank.getParty(),credit.getParty(),false,companyName,new UniqueIdentifier(),new UniqueIdentifier()));
-            tx.command(ImmutableList.of(bank.getPublicKey(),credit.getPublicKey()), new LoanVerificationContract.Commands.SendForApproval());
+            tx.command(ImmutableList.of(bank.getPublicKey(),credit.getPublicKey()), new LoanVerificationContract.Commands.SendForCreditApproval());
             tx.verifies();
             return null;
         });
@@ -123,7 +123,7 @@ public class LoanDataVerContractTest {
 
         transaction(ledgerServices,tx -> {
             tx.output(LOANVERIFICATION_CONTRACT_ID, new LoanVerificationState(amount,bank.getParty(),credit.getParty(),false,companyName,new UniqueIdentifier(),new UniqueIdentifier()));
-            tx.command(ImmutableList.of(bank.getPublicKey(), credit.getPublicKey()),  new LoanVerificationContract.Commands.SendForApproval());
+            tx.command(ImmutableList.of(bank.getPublicKey(), credit.getPublicKey()),  new LoanVerificationContract.Commands.SendForCreditApproval());
             tx.verifies();
             return null;
         });
@@ -135,7 +135,7 @@ public class LoanDataVerContractTest {
         /**** This test case also checks the both parties actually sign the transaction ***/
         transaction(ledgerServices, tx -> {
             tx.output(LOANVERIFICATION_CONTRACT_ID, loanVerificationState);
-            tx.command(ImmutableList.of(credit.getParty().getOwningKey(), bank.getParty().getOwningKey()), new LoanVerificationContract.Commands.SendForApproval());
+            tx.command(ImmutableList.of(credit.getParty().getOwningKey(), bank.getParty().getOwningKey()), new LoanVerificationContract.Commands.SendForCreditApproval());
             tx.verifies();
             return null;
         });
@@ -146,7 +146,7 @@ public class LoanDataVerContractTest {
         /**** This test case also checks the both parties actually sign the transaction ***/
         transaction(ledgerServices, tx -> {
             tx.output(LOANVERIFICATION_CONTRACT_ID, loanVerificationState);
-            tx.command(ImmutableList.of(credit.getPublicKey(), bank.getPublicKey()), new LoanVerificationContract.Commands.SendForApproval());
+            tx.command(ImmutableList.of(credit.getPublicKey(), bank.getPublicKey()), new LoanVerificationContract.Commands.SendForCreditApproval());
             tx.verifies();
             return null;
         });

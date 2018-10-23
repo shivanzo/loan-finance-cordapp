@@ -151,7 +151,7 @@ public class LoanReqContractTest {
         /**** This test case also checks the both parties actually sign the transaction ***/
         transaction(ledgerServices, tx -> {
             tx.output(LOANREQUEST_CONTRACT_ID, loanVerificationState);
-            tx.command(ImmutableList.of(credit.getParty().getOwningKey(), bank.getParty().getOwningKey()), new LoanVerificationContract.Commands.SendForApproval());
+            tx.command(ImmutableList.of(credit.getParty().getOwningKey(), bank.getParty().getOwningKey()), new LoanVerificationContract.Commands.SendForCreditApproval());
             tx.verifies();
             return null;
         });
@@ -163,7 +163,7 @@ public class LoanReqContractTest {
         /**** This test case also checks the both parties actually sign the transaction ***/
         transaction(ledgerServices, tx -> {
             tx.output(LOANREQUEST_CONTRACT_ID, loanVerificationState);
-            tx.command(ImmutableList.of(credit.getPublicKey(), bank.getPublicKey()), new LoanVerificationContract.Commands.SendForApproval());
+            tx.command(ImmutableList.of(credit.getPublicKey(), bank.getPublicKey()), new LoanVerificationContract.Commands.SendForCreditApproval());
             tx.verifies();
             return null;
         });
@@ -202,7 +202,7 @@ public class LoanReqContractTest {
         transaction(ledgerServices,tx -> {
             tx.input(LOANREQUEST_CONTRACT_ID,financeBankState);
             tx.output(LOANREQUEST_CONTRACT_ID, financeBankState);
-            tx.command(ImmutableList.of(finance.getParty().getOwningKey(), bank.getParty().getOwningKey()), new LoanReqContract.Commands.LoanNotification());
+            tx.command(ImmutableList.of(finance.getParty().getOwningKey(), bank.getParty().getOwningKey()), new LoanReqContract.Commands.LoanResponse());
             tx.verifies();
             return null;
         });
@@ -215,7 +215,7 @@ public class LoanReqContractTest {
         transaction(ledgerServices,tx -> {
             tx.input(LOANREQUEST_CONTRACT_ID,financeBankState);
             tx.output(LOANREQUEST_CONTRACT_ID, financeBankState);
-            tx.command(ImmutableList.of(finance.getPublicKey(), bank.getPublicKey()), new LoanReqContract.Commands.LoanNotification());
+            tx.command(ImmutableList.of(finance.getPublicKey(), bank.getPublicKey()), new LoanReqContract.Commands.LoanResponse());
             tx.verifies();
             return null;
         });

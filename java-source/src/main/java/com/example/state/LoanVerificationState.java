@@ -7,12 +7,10 @@ import net.corda.core.identity.AbstractParty;
 import net.corda.core.identity.Party;
 import net.corda.core.serialization.ConstructorForDeserialization;
 import net.corda.core.serialization.CordaSerializable;
-
-import java.io.Serializable;
 import java.util.List;
 
 @CordaSerializable
-public class LoanVerificationState implements LinearState,Serializable {
+public class LoanVerificationState implements LinearState {
     private Party bankNode;
     private Party creditAgencyNode;
     private boolean isEligibleForLoan;
@@ -35,7 +33,7 @@ public class LoanVerificationState implements LinearState,Serializable {
     public LoanVerificationState(Party bankNode, UniqueIdentifier linearIdLoanVerState, UniqueIdentifier linearIdLoanReqState) {
         this.amount = amount;
         this.bankNode = bankNode;
-        this.linearIdLoanVerState =linearIdLoanVerState;
+        this.linearIdLoanVerState = linearIdLoanVerState;
         this.linearIdLoanReqState = linearIdLoanReqState;
     }
 
@@ -44,13 +42,11 @@ public class LoanVerificationState implements LinearState,Serializable {
         return bankNode;
     }
 
-    public Party getCreditAgencyNode()
-    {
+    public Party getCreditAgencyNode() {
         return creditAgencyNode;
     }
 
-    public boolean getLoanEligibleFlag()
-    {
+    public boolean getLoanEligibleFlag() {
         return isEligibleForLoan;
     }
 
@@ -87,13 +83,12 @@ public class LoanVerificationState implements LinearState,Serializable {
     }
 
     @Override
-    public UniqueIdentifier getLinearId()
-    {
+    public UniqueIdentifier getLinearId() {
         return linearIdLoanVerState;
     }
+
     @Override
-    public List<AbstractParty> getParticipants()
-    {
+    public List<AbstractParty> getParticipants() {
         return ImmutableList.of(bankNode, creditAgencyNode);
     }
 }

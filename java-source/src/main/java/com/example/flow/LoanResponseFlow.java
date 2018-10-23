@@ -48,17 +48,14 @@ public class LoanResponseFlow {
         private final ProgressTracker.Step BANK_RESPONSE = new ProgressTracker.Step("Sending response to Finance agency from Bank");
         private final ProgressTracker.Step SIGNING_TRANSACTION = new ProgressTracker.Step("Signing transaction with our private key.");
 
-        private final ProgressTracker.Step GATHERING_SIGS = new ProgressTracker.Step("Gathering the counterparty's signature.")
-        {
-            public ProgressTracker childProgressTracker()
-            {
+        private final ProgressTracker.Step GATHERING_SIGS = new ProgressTracker.Step("Gathering the counterparty's signature.") {
+            public ProgressTracker childProgressTracker() {
                 return CollectSignaturesFlow.Companion.tracker();
             }
         };
 
         private final ProgressTracker.Step FINALISING_TRANSACTION = new ProgressTracker.Step("Obtaining notary signature and recording transaction.") {
-            public ProgressTracker childProgressTracker()
-            {
+            public ProgressTracker childProgressTracker() {
                 return FinalityFlow.Companion.tracker();
             }
         };
@@ -111,10 +108,9 @@ public class LoanResponseFlow {
 
             List<StateAndRef<LoanRequestState>> financeStateListResults = getServiceHub().getVaultService().queryBy(LoanRequestState.class,criteria).getStates();
 
-            if (financeStateListResults.isEmpty()) {
-                throw new FlowException("Linearid with id %s not found."+ linearIdLoanReqDataState);
-            }
-            else {
+            if ((financeStateListResults != null) && (financeStateListResults.isEmpty())) {
+                throw new FlowException("Linearid with id %s not found." + linearIdLoanReqDataState);
+            } else {
                 linearId = linearIdLoanReqDataState;
                 inputState = financeStateListResults.get(0);
             }
@@ -135,22 +131,21 @@ public class LoanResponseFlow {
 
             List<StateAndRef<LoanVerificationState>>  bankAndCreditStateList = getServiceHub().getVaultService().queryBy(LoanVerificationState.class,criteriaForBankVault).getStates();
 
-            if(!bankAndCreditStateList.isEmpty()) {
+            if (!bankAndCreditStateList.isEmpty()) {
                 bankCreditStateQuery = bankAndCreditStateList.get(0);
-            }
-            else {
-                throw new FlowException("Exception while fetching FinanceID : "+ linearIdLoanDataVerState + "size "+bankAndCreditStateList.size());
+            } else {
+                throw new FlowException("Exception while fetching FinanceID : "+ linearIdLoanDataVerState + "size "+ bankAndCreditStateList.size());
             }
 
             isEligibleForLoan = bankCreditStateQuery.getState().getData().getLoanEligibleFlag();
             amount = bankCreditStateQuery.getState().getData().getAmount();
             companyName = bankCreditStateQuery.getState().getData().getCompanyName();
-            loanRequestState = new LoanRequestState(financeParty,bankParty,companyName,amount,linearId,isEligibleForLoan, linearIdLoanDataVerState);
+            loanRequestState = new LoanRequestState(financeParty, bankParty, companyName, amount, linearId, isEligibleForLoan, linearIdLoanDataVerState);
             /********* NEED TO QUERY FROM BANK STATE THE FLAG ****/
             loanRequestState.setEligibleForLoan(bankCreditStateQuery.getState().getData().getLoanEligibleFlag());
             inputState.getState().getData().setEligibleForLoan(bankCreditStateQuery.getState().getData().getLoanEligibleFlag());
 
-            final Command<LoanReqContract.Commands.LoanNotification> loanNotificationCommand = new Command<LoanReqContract.Commands.LoanNotification>(new LoanReqContract.Commands.LoanNotification(), ImmutableList.of(loanRequestState.getBankNode().getOwningKey(), loanRequestState.getFinanceNode().getOwningKey()));
+            final Command<LoanReqContract.Commands.LoanResponse> loanNotificationCommand = new Command<LoanReqContract.Commands.LoanResponse>(new LoanReqContract.Commands.LoanResponse(), ImmutableList.of(loanRequestState.getBankNode().getOwningKey(), loanRequestState.getFinanceNode().getOwningKey()));
             final TransactionBuilder txBuilder = new TransactionBuilder(notary)
                     .addInputState(inputState)
                     .addOutputState(loanRequestState, LoanReqContract.LOANREQUEST_CONTRACT_ID).addCommand(loanNotificationCommand);

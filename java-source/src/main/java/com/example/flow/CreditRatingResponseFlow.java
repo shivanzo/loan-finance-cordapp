@@ -25,7 +25,7 @@ public class CreditRatingResponseFlow {
         private final Party bankParty;
         private  String companyName;
         private boolean isEligibleForLoanFlag;
-        private int amount ;
+        private int amount;
         UniqueIdentifier linearId = null;
         UniqueIdentifier linearIdLoanReqState = null;
         UniqueIdentifier linearIdLoanDataVerState = null;
@@ -103,9 +103,9 @@ public class CreditRatingResponseFlow {
                     null);
 
             StateAndRef<LoanVerificationState> inputState = null;
-            List<StateAndRef<LoanVerificationState>> inputStateList = getServiceHub().getVaultService().queryBy(LoanVerificationState.class,criteriaBankState).getStates();
-            if(inputStateList == null || inputStateList.isEmpty() ) {
-                throw new IllegalArgumentException("State Cannot be found : "+inputStateList.size() +" "+ linearIdLoanDataVerState);
+            List<StateAndRef<LoanVerificationState>> inputStateList = getServiceHub().getVaultService().queryBy(LoanVerificationState.class, criteriaBankState).getStates();
+            if (inputStateList == null || inputStateList.isEmpty()) {
+                throw new IllegalArgumentException("State Cannot be found : " + inputStateList.size() + " " + linearIdLoanDataVerState);
             }
 
             linearId = linearIdLoanDataVerState;
@@ -115,16 +115,14 @@ public class CreditRatingResponseFlow {
             amount = inputStateList.get(0).getState().getData().getAmount();
             linearIdLoanReqState = inputStateList.get(0).getState().getData().getLinearIdLoanReqState();
 
-            List<String> blacklisted = Arrays.asList("jetsAirways","Kong airways","Hypermarket");
+            List<String> blacklisted = Arrays.asList("jetsAirways", "Kong airways", "Hypermarket");
             boolean contains = blacklisted.contains(companyName);
 
             /** Setting the loanEligibility flag in the state's vault **/
-            if(contains) {
-                loanVerificationStates = new LoanVerificationState(amount, bankParty,creditParty,false, companyName,linearId, linearIdLoanReqState);
-            }
-            else {
-                 loanVerificationStates = new LoanVerificationState(amount, bankParty,creditParty,true, companyName,linearId, linearIdLoanReqState);
-
+            if (contains) {
+                loanVerificationStates = new LoanVerificationState(amount, bankParty, creditParty, false, companyName,linearId, linearIdLoanReqState);
+            } else {
+                 loanVerificationStates = new LoanVerificationState(amount, bankParty, creditParty, true, companyName,linearId, linearIdLoanReqState);
             }
 
             progressTracker.setCurrentStep(LOAN_ELIGIBILITY_RESPONSE);
@@ -133,7 +131,7 @@ public class CreditRatingResponseFlow {
             final Command<LoanVerificationContract.Commands.ReceiveCreditApproval> receiveCreditApproval = new Command<LoanVerificationContract.Commands.ReceiveCreditApproval>(new LoanVerificationContract.Commands.ReceiveCreditApproval(),ImmutableList.of(loanVerificationStates.getCreditAgencyNode().getOwningKey(), loanVerificationStates.getBankNode().getOwningKey()));
             final TransactionBuilder txBuilder = new TransactionBuilder(notary)
                     .addInputState(inputState)
-                    .addOutputState(loanVerificationStates,LoanVerificationContract.LOANVERIFICATION_CONTRACT_ID)
+                    .addOutputState(loanVerificationStates, LoanVerificationContract.LOANVERIFICATION_CONTRACT_ID)
                     .addCommand(receiveCreditApproval);
             //step 2
             progressTracker.setCurrentStep(VERIFYING_TRANSACTION);
@@ -174,7 +172,6 @@ public class CreditRatingResponseFlow {
                     requireThat(require -> {
                         ContractState output = stx.getTx().getOutputs().get(0).getData();
                         require.using("This must be an credit agency transaction (LoanVerificationState).", output instanceof LoanVerificationState);
-                        LoanVerificationState bankAndCreditCheck = (LoanVerificationState) output;
                         return null;
                     });
                 }

@@ -7,12 +7,11 @@ import net.corda.core.identity.AbstractParty;
 import net.corda.core.identity.Party;
 import net.corda.core.serialization.ConstructorForDeserialization;
 import net.corda.core.serialization.CordaSerializable;
-
-import java.io.Serializable;
+//import java.io.Serializable;
 import java.util.List;
 
 @CordaSerializable
-public class LoanRequestState implements LinearState,Serializable {
+public class LoanRequestState implements LinearState {
 
     private Party financeNode;
     private Party bankNode;
@@ -41,13 +40,11 @@ public class LoanRequestState implements LinearState,Serializable {
         return bankNode;
     }
 
-    public String getCompanyName()
-    {
+    public String getCompanyName() {
         return companyName;
     }
 
-    public int getAmount()
-    {
+    public int getAmount() {
         return amount;
     }
 
@@ -77,15 +74,12 @@ public class LoanRequestState implements LinearState,Serializable {
 
 
     @Override
-    public UniqueIdentifier getLinearId()
-    {
+    public UniqueIdentifier getLinearId() {
         return linearIdLoanReqState;
     }
 
     @Override
-    public List<AbstractParty> getParticipants()
-    {
+    public List<AbstractParty> getParticipants() {
         return ImmutableList.of(financeNode, bankNode);
     }
-
 }

@@ -36,7 +36,7 @@ public class RequestCreditRatingFlow {
         /** This constructor is called from REST API **/
         public Initiator(Party creditParty, UniqueIdentifier linearIdRequestForLoan) {
             this.creditParty = creditParty;
-            this.linearIdRequestForLoan =linearIdRequestForLoan;
+            this.linearIdRequestForLoan = linearIdRequestForLoan;
         }
 
         public UniqueIdentifier getLinearIdRequestForLoan() {
@@ -110,7 +110,7 @@ public class RequestCreditRatingFlow {
                 List<UniqueIdentifier> financeStateListValidationResult = new ArrayList<UniqueIdentifier>();
                 List<StateAndRef<LoanRequestState>> financeStateListResults = getServiceHub().getVaultService().queryBy(LoanRequestState.class,criteria).getStates();
                 if (financeStateListResults.isEmpty()) {
-                    throw new FlowException("Linearid with id not found."+linearIdRequestForLoan );
+                    throw new FlowException("Linearid with id not found." + linearIdRequestForLoan );
                 }
 
 
@@ -122,10 +122,10 @@ public class RequestCreditRatingFlow {
 
             /******* Validation of financeDataState linear id *****/
 
-            LoanVerificationState loanVerificationState = new LoanVerificationState(amount,bankParty, creditParty, isEligibleForLoan, companyName,new UniqueIdentifier(),linearIdRequestForLoan);
-            final Command<LoanVerificationContract.Commands.SendForApproval> sendLoanApprovalCommand = new Command<LoanVerificationContract.Commands.SendForApproval>(new LoanVerificationContract.Commands.SendForApproval(),ImmutableList.of(loanVerificationState.getBankNode().getOwningKey(), loanVerificationState.getCreditAgencyNode().getOwningKey()));
+            LoanVerificationState loanVerificationState = new LoanVerificationState(amount, bankParty, creditParty, isEligibleForLoan, companyName, new UniqueIdentifier(), linearIdRequestForLoan);
+            final Command<LoanVerificationContract.Commands.SendForCreditApproval> sendLoanApprovalCommand = new Command<LoanVerificationContract.Commands.SendForCreditApproval>(new LoanVerificationContract.Commands.SendForCreditApproval(), ImmutableList.of(loanVerificationState.getBankNode().getOwningKey(), loanVerificationState.getCreditAgencyNode().getOwningKey()));
             final TransactionBuilder txBuilder = new TransactionBuilder(notary)
-                    .addOutputState(loanVerificationState,LoanVerificationContract.LOANVERIFICATION_CONTRACT_ID)
+                    .addOutputState(loanVerificationState, LoanVerificationContract.LOANVERIFICATION_CONTRACT_ID)
                     .addCommand(sendLoanApprovalCommand);
 
             //step 2
