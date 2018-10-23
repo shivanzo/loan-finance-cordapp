@@ -18,7 +18,6 @@ import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
 import net.corda.core.utilities.ProgressTracker;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static net.corda.core.contracts.ContractsDSL.requireThat;
@@ -31,17 +30,16 @@ public class LoanResponseFlow {
         private String companyName;
         private int amount;
         private boolean isEligibleForLoan;
-        UniqueIdentifier linearIdLoanDataVerState = null;
+        UniqueIdentifier linearIdLoanDataVer = null;
         UniqueIdentifier linearIdLoanReqDataState = null;
 
         // This linearId variable serves as a temporary varible which will have the copy of prev state linear id */
         UniqueIdentifier linearId = null;
 
         /* This Constructor is called from REST API */
-        public Initiator(Party otherParty, UniqueIdentifier linearIdLoanReqDataState, UniqueIdentifier linearIdLoanDataVerState) {
+        public Initiator(Party otherParty, UniqueIdentifier linearIdLoanDataVer) {
             this.financeParty = otherParty;
-            this.linearIdLoanReqDataState = linearIdLoanReqDataState;
-            this.linearIdLoanDataVerState = linearIdLoanDataVerState;
+            this.linearIdLoanDataVer = linearIdLoanDataVer;
         }
 
         private final ProgressTracker.Step VERIFYING_TRANSACTION = new ProgressTracker.Step("Verifying contract constraints.");
@@ -68,12 +66,12 @@ public class LoanResponseFlow {
                 FINALISING_TRANSACTION
         );
 
-        public UniqueIdentifier getLinearIdLoanDataVerState() {
-            return linearIdLoanDataVerState;
+        public UniqueIdentifier getLinearIdLoanDataVer() {
+            return linearIdLoanDataVer;
         }
 
-        public void setLinearIdLoanDataVerState(UniqueIdentifier linearIdLoanDataVerState) {
-            this.linearIdLoanDataVerState = linearIdLoanDataVerState;
+        public void setLinearIdLoanDataVer(UniqueIdentifier linearIdLoanDataVer) {
+            this.linearIdLoanDataVer = linearIdLoanDataVer;
         }
 
         public UniqueIdentifier getLinearIdLoanReqDataState() {
@@ -94,8 +92,39 @@ public class LoanResponseFlow {
 
             Party bankParty = getServiceHub().getMyInfo().getLegalIdentities().get(0);
             StateAndRef<LoanRequestState> inputState = null;
-            StateAndRef<LoanVerificationState> bankCreditStateQuery = null;
-            LoanVerificationState bankState = new LoanVerificationState(bankParty, linearIdLoanDataVerState, linearIdLoanReqDataState);
+            StateAndRef<LoanVerificationState> loanVerificationState = null;
+            //LoanVerificationState bankState = new LoanVerificationState(bankParty, linearIdLoanDataVer, linearIdLoanReqDataState);
+
+            final Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
+            progressTracker.setCurrentStep(BANK_RESPONSE);
+            //Generate an unsigned transaction
+
+            /** adding the linear id of unconsumed Previous LoanRequestState **/
+            //linearId = linearIdLoanReqDataState;
+
+            LoanRequestState loanRequestState = null;
+
+            QueryCriteria criteriaForBankVault = new QueryCriteria.LinearStateQueryCriteria(
+                    null,
+                    ImmutableList.of(linearIdLoanDataVer),
+                    Vault.StateStatus.UNCONSUMED,
+                   null);
+
+            List<StateAndRef<LoanVerificationState>>  loanVerificationStateList = getServiceHub().getVaultService().queryBy(LoanVerificationState.class, criteriaForBankVault).getStates();
+
+            if ((loanVerificationStateList != null) && (!loanVerificationStateList.isEmpty())) {
+                loanVerificationState = loanVerificationStateList.get(0);
+            } else {
+                throw new FlowException("Exception while fetching FinanceID : " + linearIdLoanDataVer + "size "+ loanVerificationStateList.size());
+            }
+
+            linearIdLoanReqDataState = loanVerificationState.getState().getData().getLinearIdLoanReq();
+            isEligibleForLoan = loanVerificationState.getState().getData().getLoanEligibleFlag();
+            amount = loanVerificationState.getState().getData().getAmount();
+            companyName = loanVerificationState.getState().getData().getCompanyName();
+            loanRequestState = new LoanRequestState(financeParty, bankParty, companyName, amount, linearId, isEligibleForLoan, linearIdLoanDataVer);
+            /********* NEED TO QUERY FROM BANK STATE THE FLAG ****/
+
 
             QueryCriteria criteria = new QueryCriteria.LinearStateQueryCriteria(
                     null,
@@ -103,52 +132,24 @@ public class LoanResponseFlow {
                     Vault.StateStatus.UNCONSUMED,
                     null);
 
-            List<UniqueIdentifier> financeStateListValidationResult = new ArrayList<UniqueIdentifier>();
-            List<UniqueIdentifier> bankAndCreditStateRetrieve = new ArrayList<UniqueIdentifier>();
+            List<StateAndRef<LoanRequestState>> loanRequestStateListResults = getServiceHub().getVaultService().queryBy(LoanRequestState.class, criteria).getStates();
 
-            List<StateAndRef<LoanRequestState>> financeStateListResults = getServiceHub().getVaultService().queryBy(LoanRequestState.class,criteria).getStates();
-
-            if ((financeStateListResults != null) && (financeStateListResults.isEmpty())) {
-                throw new FlowException("Linearid with id %s not found." + linearIdLoanReqDataState);
+            if ((loanRequestStateListResults == null) || (loanRequestStateListResults.isEmpty())) {
+                throw new FlowException("Linearid with id %s not found." + linearIdLoanReqDataState );
             } else {
-                linearId = linearIdLoanReqDataState;
-                inputState = financeStateListResults.get(0);
+                //linearId = linearIdLoanReqDataState;
+                inputState = loanRequestStateListResults.get(0);
             }
 
-            final Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
-            progressTracker.setCurrentStep(BANK_RESPONSE);
-            //Generate an unsigned transaction
+            //loanRequestState.setEligibleForLoan(loanVerificationState.getState().getData().getLoanEligibleFlag());
+            //inputState.getState().getData().setEligibleForLoan(loanVerificationState.getState().getData().getLoanEligibleFlag());
 
-            /** adding the linear id of unconsumed Previous LoanRequestState **/
-            linearId = linearIdLoanReqDataState;
-            LoanRequestState loanRequestState = null;
-
-            QueryCriteria criteriaForBankVault = new QueryCriteria.LinearStateQueryCriteria(
-                    null,
-                    ImmutableList.of(linearIdLoanDataVerState),
-                    Vault.StateStatus.UNCONSUMED,
-                    null);
-
-            List<StateAndRef<LoanVerificationState>>  bankAndCreditStateList = getServiceHub().getVaultService().queryBy(LoanVerificationState.class,criteriaForBankVault).getStates();
-
-            if (!bankAndCreditStateList.isEmpty()) {
-                bankCreditStateQuery = bankAndCreditStateList.get(0);
-            } else {
-                throw new FlowException("Exception while fetching FinanceID : "+ linearIdLoanDataVerState + "size "+ bankAndCreditStateList.size());
-            }
-
-            isEligibleForLoan = bankCreditStateQuery.getState().getData().getLoanEligibleFlag();
-            amount = bankCreditStateQuery.getState().getData().getAmount();
-            companyName = bankCreditStateQuery.getState().getData().getCompanyName();
-            loanRequestState = new LoanRequestState(financeParty, bankParty, companyName, amount, linearId, isEligibleForLoan, linearIdLoanDataVerState);
-            /********* NEED TO QUERY FROM BANK STATE THE FLAG ****/
-            loanRequestState.setEligibleForLoan(bankCreditStateQuery.getState().getData().getLoanEligibleFlag());
-            inputState.getState().getData().setEligibleForLoan(bankCreditStateQuery.getState().getData().getLoanEligibleFlag());
-
+            LoanRequestState loanRequestStateObj = new LoanRequestState(financeParty, bankParty, companyName, amount, linearIdLoanReqDataState, isEligibleForLoan, linearIdLoanDataVer);
+           /// LoanVerificationState loanRequestStateObj = new LoanVerificationState(bankParty, linearIdLoanDataVer, linearIdLoanReqDataState, isEligibleForLoan);
             final Command<LoanReqContract.Commands.LoanResponse> loanNotificationCommand = new Command<LoanReqContract.Commands.LoanResponse>(new LoanReqContract.Commands.LoanResponse(), ImmutableList.of(loanRequestState.getBankNode().getOwningKey(), loanRequestState.getFinanceNode().getOwningKey()));
             final TransactionBuilder txBuilder = new TransactionBuilder(notary)
                     .addInputState(inputState)
-                    .addOutputState(loanRequestState, LoanReqContract.LOANREQUEST_CONTRACT_ID).addCommand(loanNotificationCommand);
+                    .addOutputState(loanRequestStateObj, LoanReqContract.LOANREQUEST_CONTRACT_ID).addCommand(loanNotificationCommand);
 
             //step 2
             progressTracker.setCurrentStep(VERIFYING_TRANSACTION);

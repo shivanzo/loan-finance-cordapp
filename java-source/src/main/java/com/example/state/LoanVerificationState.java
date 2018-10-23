@@ -16,25 +16,25 @@ public class LoanVerificationState implements LinearState {
     private boolean isEligibleForLoan;
     private String companyName;
     private int amount;
-    private final UniqueIdentifier linearIdLoanVerState;
-    private final UniqueIdentifier linearIdLoanReqState;
+    private final UniqueIdentifier linearIdLoanVer;
+    private final UniqueIdentifier linearIdLoanReq;
 
     @ConstructorForDeserialization
-    public LoanVerificationState(int amount, Party bankNode, Party creditAgencyNode, boolean isEligibleForLoan, String companyName, UniqueIdentifier linearIdLoanVerState, UniqueIdentifier linearIdLoanReqState) {
+    public LoanVerificationState(int amount, Party bankNode, Party creditAgencyNode, boolean isEligibleForLoan, String companyName, UniqueIdentifier linearIdLoanVer, UniqueIdentifier linearIdLoanReq) {
         this.amount = amount;
         this.bankNode = bankNode;
         this.creditAgencyNode = creditAgencyNode;
         this.isEligibleForLoan = isEligibleForLoan;
         this.companyName = companyName;
-        this.linearIdLoanVerState = linearIdLoanVerState;
-        this.linearIdLoanReqState = linearIdLoanReqState;
+        this.linearIdLoanVer = linearIdLoanVer;
+        this.linearIdLoanReq = linearIdLoanReq;
     }
 
-    public LoanVerificationState(Party bankNode, UniqueIdentifier linearIdLoanVerState, UniqueIdentifier linearIdLoanReqState) {
+    public LoanVerificationState(Party bankNode, UniqueIdentifier linearIdLoanVer, UniqueIdentifier linearIdLoanReq) {
         this.amount = amount;
         this.bankNode = bankNode;
-        this.linearIdLoanVerState = linearIdLoanVerState;
-        this.linearIdLoanReqState = linearIdLoanReqState;
+        this.linearIdLoanVer = linearIdLoanVer;
+        this.linearIdLoanReq = linearIdLoanReq;
     }
 
 
@@ -54,8 +54,8 @@ public class LoanVerificationState implements LinearState {
         this.isEligibleForLoan = eligibleForLoan;
     }
 
-    public UniqueIdentifier getLinearIdLoanVerState() {
-        return linearIdLoanVerState;
+    public UniqueIdentifier getLinearIdLoanVer() {
+        return linearIdLoanVer;
     }
 
     public boolean isEligibleForLoan() {
@@ -70,8 +70,8 @@ public class LoanVerificationState implements LinearState {
         this.companyName = companyName;
     }
 
-    public UniqueIdentifier getLinearIdLoanReqState() {
-        return linearIdLoanReqState;
+    public UniqueIdentifier getLinearIdLoanReq() {
+        return linearIdLoanReq;
     }
 
     public int getAmount() {
@@ -84,7 +84,7 @@ public class LoanVerificationState implements LinearState {
 
     @Override
     public UniqueIdentifier getLinearId() {
-        return linearIdLoanVerState;
+        return linearIdLoanVer;
     }
 
     @Override

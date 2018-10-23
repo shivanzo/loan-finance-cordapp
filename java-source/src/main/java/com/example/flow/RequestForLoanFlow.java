@@ -85,14 +85,13 @@ public class RequestForLoanFlow {
         public SignedTransaction call() throws FlowException {
 
             final Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
-            UniqueIdentifier uniqueIdentifier = null;
 
             //Stage 1
             progressTracker.setCurrentStep(LOAN_REQUEST);
 
             //Generate an unsigned transaction
             Party financeParty = getServiceHub().getMyInfo().getLegalIdentities().get(0);
-            LoanRequestState financeBankState = new LoanRequestState(financeParty, bankParty, companyName, amount, new UniqueIdentifier(), false, uniqueIdentifier);
+            LoanRequestState financeBankState = new LoanRequestState(financeParty, bankParty, companyName, amount, new UniqueIdentifier(), false);
             final Command<LoanReqContract.Commands.InitiateLoan> initiateLoanCommand = new Command<LoanReqContract.Commands.InitiateLoan>(new LoanReqContract.Commands.InitiateLoan(), ImmutableList.of(financeBankState.getBankNode().getOwningKey(), financeBankState.getFinanceNode().getOwningKey()));
 
             final TransactionBuilder txBuilder = new TransactionBuilder(notary)

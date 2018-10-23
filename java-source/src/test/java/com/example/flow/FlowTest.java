@@ -44,9 +44,7 @@ public class FlowTest {
 
     @Rule
     public final ExpectedException exception = ExpectedException.none();
-
-
-
+    
     @Test
     public void recordedTransactionHasNoInputsAndASingleOutputTheInputIOU() throws Exception {
         RequestForLoanFlow.Initiator flow = new RequestForLoanFlow.Initiator( nodeB.getInfo().getLegalIdentities().get(0), amount,companyName);

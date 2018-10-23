@@ -113,7 +113,7 @@ public class CreditRatingResponseFlow {
 
             companyName = inputStateList.get(0).getState().getData().getCompanyName();
             amount = inputStateList.get(0).getState().getData().getAmount();
-            linearIdLoanReqState = inputStateList.get(0).getState().getData().getLinearIdLoanReqState();
+            linearIdLoanReqState = inputStateList.get(0).getState().getData().getLinearIdLoanReq();
 
             List<String> blacklisted = Arrays.asList("jetsAirways", "Kong airways", "Hypermarket");
             boolean contains = blacklisted.contains(companyName);

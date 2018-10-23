@@ -9,8 +9,8 @@ public class DataBean {
     private String company;
     private int value;
     private CordaX500Name partyName;
-    private String financeLinearId;
-    private String bankLinearId;
+    private String loanReqLinearId;
+    private String loanVerLinearId;
 
     public void setCompany(String comapany) {
         this.company = comapany;
@@ -36,24 +36,16 @@ public class DataBean {
         return partyName;
     }
 
-    public String getFinanceLinearId() {
-        return financeLinearId;
+    public String getLoanReqLinearId() {
+        return loanReqLinearId;
     }
 
-    public String getBankLinearId() {
-        return bankLinearId;
-    }
-
-    public void setFinanceLinearId(String financeLinearId) {
-        this.financeLinearId = financeLinearId;
-    }
-
-    public void setBankLinearId(String bankLinearId) {
-        this.bankLinearId = bankLinearId;
+    public String getLoanVerLinearId() {
+        return loanVerLinearId;
     }
 
     @Override
     public String toString() {
-        return "DetailBean [company=" + company + "value=" + value + "partyName=" + partyName + "financeLinearId=" + financeLinearId + "bankLinearId=" + bankLinearId +"]";
+        return "DetailBean [company=" + company + "value=" + value + "partyName=" + partyName + "loanReqLinearId=" + loanReqLinearId + "loanVerLinearId=" + loanVerLinearId + "]";
     }
 }
