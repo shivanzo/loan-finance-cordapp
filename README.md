@@ -4,8 +4,8 @@ This simple CorDapp provides the facility for un-trusting parties to interact an
 This application shows how finance agencies(A third party which provides loan to individuals), Banks and credit rating agencies can use corda DLT for Loan lending process. Finance agency usually finances loans for the people.Finance agency forwards the loan application to the bank for loan. Bank internally contacts credit rating agency to check the eligibility of the applicant for the loan. Based on the feedback provided by credit rating agency, bank decides to approve or reject the loan application sent by the finance agency. Communication between Bank and credit rating agency or any data exchanged between Bank and credit rating agency remains private to Finance Agency. Finance agency does not have visibility what Bank and Credit rating agency does. This corDapp has 3 parties 
 
 1. Finance Agency (A third party which provides personal loans to individual)
-2. Banks 
-3. Credit rating agency ( A third party which checks the credit worthiness of loan applicantion.
+2. Banks (Bank sends the loan application to credit agency to check the credit worthyness of the loan application)
+3. Credit rating agency (A third party which checks the credit worthiness of loan applicantion).
 
 ## CorDapp structure
 *	There are 3 Parties and 1 Notary.
