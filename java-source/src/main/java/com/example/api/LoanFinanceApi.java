@@ -186,7 +186,6 @@ public class LoanFinanceApi {
 
         System.out.println("Vault Query Finance State : " + rpcOps.vaultQuery(LoanRequestState.class).getStates() );
         UniqueIdentifier linearIdLoanVerState = new UniqueIdentifier();
-        //UniqueIdentifier uuidFinanceState = linearIdFinanceState.copy(null,UUID.fromString(financeBankStateLinearId));
         UniqueIdentifier uuidLoanVerState = linearIdLoanVerState.copy(null, UUID.fromString(loanVerStateLinearId));
 
         try {
@@ -196,7 +195,7 @@ public class LoanFinanceApi {
                     .getReturnValue()
                     .get();
 
-            final String msg = String.format("LONDON CREDIT RATING AGENCY Reponse.\n Transaction id %s is successfully committed to ledger. \n", signedTx.getId() + " " + "The Loan Applicaiton id (linear id) is  : " + initiator.getLinearIdLoanReqState());
+            final String msg = String.format("LONDON CREDIT RATING AGENCY Reponse.\n Transaction id %s is successfully committed to ledger. \n", signedTx.getId());
             return Response.status(CREATED).entity(msg).build();
 
         } catch (Throwable ex) {
@@ -231,15 +230,13 @@ public class LoanFinanceApi {
 
         try {
             LoanResponseFlow.Initiator initiator = new LoanResponseFlow.Initiator(otherParty , uuidLoanVerState);
-            //LoanResponseFlow.Initiator initiator = new LoanResponseFlow.Initiator(otherParty,uuidFinanceState,uuidBankState);
             final SignedTransaction signedTx = rpcOps
                     .startTrackedFlowDynamic(initiator.getClass(), otherParty, uuidLoanVerState)
-                    //.startTrackedFlowDynamic(initiator.getClass(),otherParty,uuidFinanceState,uuidBankState)
                     .getReturnValue()
                     .get();
 
             System.out.println("Previous  Finance Linear Id is  : " + initiator.getLinearIdLoanReqDataState());
-            final String msg = String.format("Loan Application Response from STANDARD CHARTERED BANK. \n Transaction id %s is sucessfully  committed to ledger.\n", signedTx.getId() +" "+ " Application id is : "+initiator.getLinearIdLoanReqDataState());
+            final String msg = String.format("Loan Application Response from STANDARD CHARTERED BANK. \n Transaction id %s is sucessfully  committed to ledger.\n", signedTx.getId());
             return Response.status(CREATED).entity(msg).build();
 
         } catch (Throwable ex) {
